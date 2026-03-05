@@ -2,6 +2,12 @@
 
 All notable changes to OpenAPI Validator will be documented in this file.
 
+## v0.6.1
+
+- Fix custom generator commands bypassing image entrypoints due to `sh -c` wrapping
+- Use POSIX shell-word splitting (`shell-words`) for correct handling of quoted arguments
+- Add example configurations with integration tests
+
 ## v0.6.0
 
 - Add custom generator support via `custom_generators_dir` config and YAML definitions
