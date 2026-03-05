@@ -2,6 +2,13 @@
 
 All notable changes to OpenAPI Validator will be documented in this file.
 
+## v0.6.0
+
+- Add custom generator support via `custom_generators_dir` config and YAML definitions
+- Warn about modified generator configs during `oav clean`
+- Replace deprecated `serde_yaml` with `yaml_serde`
+- Relax dependency version pins
+
 ## v0.5.0
 
 - Add JSON output (`--output json`) for machine-readable results
