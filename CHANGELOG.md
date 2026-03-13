@@ -2,6 +2,13 @@
 
 All notable changes to OpenAPI Validator will be documented in this file.
 
+## v0.7.0
+
+- Support validating specs from a URL (`oav validate --spec https://...`)
+- Support JSON spec files alongside YAML
+- Show discovered spec file path and ask for confirmation during `oav init`
+- Streamline README and extract GitHub Action docs
+
 ## v0.6.1
 
 - Fix custom generator commands bypassing image entrypoints due to `sh -c` wrapping
