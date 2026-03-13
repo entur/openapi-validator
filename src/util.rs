@@ -208,9 +208,21 @@ fn is_json(path: &Path) -> bool {
     )
 }
 
+/// Check whether content (as a string) looks like an OpenAPI spec.
+/// For JSON content, looks for `"openapi":` as a key. For YAML, looks for
+/// `openapi:`. Only inspects the first 512 characters.
+pub fn looks_like_openapi(content: &str, json: bool) -> bool {
+    let head: String = content.chars().take(512).collect();
+    if json {
+        let stripped: String = head.chars().filter(|c| !c.is_whitespace()).collect();
+        stripped.contains("\"openapi\":")
+    } else {
+        head.contains("openapi:")
+    }
+}
+
 /// Heuristic check for OpenAPI specs: reads only the first 512 bytes and
-/// scans for an `openapi` key. For JSON this looks for `"openapi":`, for
-/// YAML it looks for `openapi:`. This avoids parsing potentially large
+/// scans for an `openapi` key. This avoids parsing potentially large
 /// files that happen to have a matching extension.
 fn is_openapi_spec(path: &Path) -> bool {
     let mut file = match File::open(path) {
@@ -223,14 +235,7 @@ fn is_openapi_spec(path: &Path) -> bool {
         Err(_) => return false,
     };
     let head = String::from_utf8_lossy(&buf[..n]);
-    if is_json(path) {
-        // Match `"openapi"` as a JSON key — require a colon after the key
-        // to avoid false positives when the word appears as a string value.
-        let stripped: String = head.chars().filter(|c| !c.is_whitespace()).collect();
-        stripped.contains("\"openapi\":")
-    } else {
-        head.contains("openapi:")
-    }
+    looks_like_openapi(&head, is_json(path))
 }
 
 fn should_skip_entry(entry: &walkdir::DirEntry) -> bool {
@@ -394,4 +399,44 @@ pub fn append_error(log_path: &Path, message: &str) -> Result<()> {
         .context("Failed to write error log")?;
     writeln!(file, "{message}")?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn looks_like_openapi_yaml_positive() {
+        assert!(looks_like_openapi(
+            "openapi: 3.0.3\ninfo:\n  title: Test",
+            false
+        ));
+    }
+
+    #[test]
+    fn looks_like_openapi_yaml_negative() {
+        assert!(!looks_like_openapi("name: not a spec\nversion: 1.0", false));
+    }
+
+    #[test]
+    fn looks_like_openapi_json_positive() {
+        assert!(looks_like_openapi(
+            r#"{"openapi": "3.0.3", "info": {}}"#,
+            true
+        ));
+    }
+
+    #[test]
+    fn looks_like_openapi_json_negative() {
+        assert!(!looks_like_openapi(r#"{"name": "not a spec"}"#, true));
+    }
+
+    #[test]
+    fn looks_like_openapi_json_value_not_key() {
+        // "openapi" as a value, not a key — should not match
+        assert!(!looks_like_openapi(
+            r#"{"type": "openapi", "name": "tool"}"#,
+            true
+        ));
+    }
 }
