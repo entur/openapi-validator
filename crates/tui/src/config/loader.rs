@@ -2,12 +2,11 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result};
+use oav_lib::config::CONFIG_FILE;
 
 use super::types::Config;
 use crate::custom::CustomGeneratorDef;
 use crate::generators;
-
-const CONFIG_FILE: &str = ".oavc";
 
 /// Load config from `.oavc` in the given directory.
 /// Returns the default config if the file doesn't exist.

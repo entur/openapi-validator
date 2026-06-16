@@ -395,7 +395,7 @@ fn cmd_validate(root: &Path, output: &Output, args: ValidateArgs) -> Result<()> 
     if let Some(j) = args.jobs {
         cfg.jobs = parse_jobs_arg(&j)?;
     }
-    let resolved_jobs = config::resolve_jobs(cfg.jobs);
+    let resolved_jobs = cfg.jobs.resolve();
     if output.verbose && resolved_jobs > 1 {
         output.print_warning("--verbose forces sequential execution (--jobs 1)");
         cfg.jobs = config::Jobs::Fixed(1);

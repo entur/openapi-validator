@@ -7,3 +7,10 @@ license.workspace = true
 repository.workspace = true
 description = "Shared library for the openapi-validator CLI and TUI"
 publish = false
+
+[features]
+clap = ["dep:clap"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"], optional = true }

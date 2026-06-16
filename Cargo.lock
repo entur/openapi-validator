@@ -738,6 +738,7 @@ dependencies = [
  "include_dir",
  "indicatif",
  "libc",
+ "oav-lib",
  "owo-colors",
  "predicates",
  "serde",
@@ -752,6 +753,10 @@ dependencies = [
 [[package]]
 name = "oav-lib"
 version = "0.0.0"
+dependencies = [
+ "clap",
+ "serde",
+]
 
 [[package]]
 name = "oav-tui"
@@ -761,6 +766,7 @@ dependencies = [
  "crossterm",
  "include_dir",
  "libc",
+ "oav-lib",
  "ratatui",
  "serde",
  "serde_json",
@@ -769,6 +775,7 @@ dependencies = [
  "similar",
  "syntect",
  "tempfile",
+ "two-face",
  "walkdir",
 ]
 
@@ -1386,6 +1393,17 @@ checksum = "71c652a3727a9cbb9a02f707f530b618ce00d0ccd762009c8c23bd191df3c17d"
 dependencies = [
  "num-conv",
  "time-core",
+]
+
+[[package]]
+name = "two-face"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b285c51f8a6ade109ed4566d33ac4fb289fb5d6cf87ed70908a5eaf65e948e34"
+dependencies = [
+ "serde",
+ "serde_derive",
+ "syntect",
 ]
 
 [[package]]

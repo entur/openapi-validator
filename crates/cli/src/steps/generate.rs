@@ -6,7 +6,7 @@ use std::process::Command;
 use std::time::Duration;
 
 use crate::cli::Mode;
-use crate::config::{self, Config};
+use crate::config::Config;
 use crate::custom::CustomGeneratorDef;
 use crate::docker;
 use crate::output::Output;
@@ -61,7 +61,7 @@ pub fn run(
             reports_root: &reports_root,
             output,
             timeout,
-            jobs: config::resolve_jobs(config.jobs),
+            jobs: config.jobs.resolve(),
         })?
     {
         failures += 1;
@@ -80,7 +80,7 @@ pub fn run(
             reports_root: &reports_root,
             output,
             timeout,
-            jobs: config::resolve_jobs(config.jobs),
+            jobs: config.jobs.resolve(),
         })?
     {
         failures += 1;

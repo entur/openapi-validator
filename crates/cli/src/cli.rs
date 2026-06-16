@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand, ValueEnum};
-use serde::{Deserialize, Serialize};
+
+pub use oav_lib::config::{Linter, Mode};
 
 /// Output format
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq)]
@@ -184,46 +185,4 @@ pub enum ConfigCommand {
     Ignore,
     /// Remove .oavc from .gitignore
     Unignore,
-}
-
-#[derive(ValueEnum, Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum Mode {
-    /// Validate server generators only
-    Server,
-    /// Validate client generators only
-    Client,
-    /// Validate both server and client generators
-    Both,
-}
-
-impl Mode {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Mode::Server => "server",
-            Mode::Client => "client",
-            Mode::Both => "both",
-        }
-    }
-}
-
-#[derive(ValueEnum, Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum Linter {
-    /// Stoplight Spectral (default)
-    Spectral,
-    /// Redocly CLI
-    Redocly,
-    /// Skip linting entirely
-    None,
-}
-
-impl Linter {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Linter::Spectral => "spectral",
-            Linter::Redocly => "redocly",
-            Linter::None => "none",
-        }
-    }
 }

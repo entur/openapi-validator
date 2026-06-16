@@ -16,6 +16,7 @@ name = "oav"
 path = "src/bin/oav.rs"
 
 [dependencies]
+oav-lib = { path = "../lib", features = ["clap"] }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"

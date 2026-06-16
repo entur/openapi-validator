@@ -5,7 +5,7 @@ use std::process::Command;
 use std::time::Duration;
 
 use crate::cli::Mode;
-use crate::config::{self, Config};
+use crate::config::Config;
 use crate::custom::{self, CustomGeneratorDef};
 use crate::docker;
 use crate::generators;
@@ -66,7 +66,7 @@ pub fn run(
         timeout,
     };
 
-    let jobs = config::resolve_jobs(config.jobs);
+    let jobs = config.jobs.resolve();
     if jobs <= 1 {
         return run_sequential(&ctx, &tasks);
     }

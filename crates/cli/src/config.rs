@@ -1,8 +1,6 @@
 use anyhow::{Context, Result, bail};
-use serde::de::{self, Visitor};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt;
 use std::fs;
 use std::path::Path;
 
@@ -10,60 +8,7 @@ use crate::cli::{Linter, Mode};
 use crate::custom::CustomGeneratorDef;
 use crate::generators;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Jobs {
-    Auto,
-    Fixed(usize), // guaranteed >= 1
-}
-
-impl Serialize for Jobs {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        match self {
-            Jobs::Auto => serializer.serialize_str("auto"),
-            Jobs::Fixed(n) => serializer.serialize_u64(*n as u64),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for Jobs {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        struct JobsVisitor;
-
-        impl<'de> Visitor<'de> for JobsVisitor {
-            type Value = Jobs;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("\"auto\" or a positive integer")
-            }
-
-            fn visit_u64<E: de::Error>(self, value: u64) -> Result<Jobs, E> {
-                if value == 0 {
-                    return Err(E::custom("jobs must be \"auto\" or a positive integer"));
-                }
-                Ok(Jobs::Fixed(value as usize))
-            }
-
-            fn visit_i64<E: de::Error>(self, value: i64) -> Result<Jobs, E> {
-                if value <= 0 {
-                    return Err(E::custom("jobs must be \"auto\" or a positive integer"));
-                }
-                Ok(Jobs::Fixed(value as usize))
-            }
-
-            fn visit_str<E: de::Error>(self, value: &str) -> Result<Jobs, E> {
-                if value.eq_ignore_ascii_case("auto") {
-                    Ok(Jobs::Auto)
-                } else {
-                    Err(E::custom("jobs must be \"auto\" or a positive integer"))
-                }
-            }
-        }
-
-        deserializer.deserialize_any(JobsVisitor)
-    }
-}
-
-pub const CONFIG_FILE: &str = ".oavc";
+pub use oav_lib::config::{CONFIG_FILE, Jobs};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(default)]
@@ -134,15 +79,6 @@ pub fn validate(config: &Config, custom: &[CustomGeneratorDef]) -> Result<()> {
     validate_generators("server", &config.server_generators, &all_server)?;
     validate_generators("client", &config.client_generators, &all_client)?;
     Ok(())
-}
-
-pub fn resolve_jobs(jobs: Jobs) -> usize {
-    match jobs {
-        Jobs::Fixed(n) => n,
-        Jobs::Auto => std::thread::available_parallelism()
-            .map(|n| n.get().min(4))
-            .unwrap_or(1),
-    }
 }
 
 pub fn load(root: &Path) -> Result<Config> {
