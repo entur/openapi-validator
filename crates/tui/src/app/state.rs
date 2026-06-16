@@ -11,7 +11,9 @@ use lazyoav::config::Config;
 use lazyoav::custom::CustomGeneratorDef;
 use lazyoav::docker::CancelToken;
 use lazyoav::keys::Keymap;
-use lazyoav::pipeline::{PipelineEvent, ValidateReport};
+use lazyoav::pipeline::{LintResult, Phase, PipelineEvent, ValidateReport};
+
+use super::trace::{CompileError, TraceIndex};
 
 use super::diff::DiffViewState;
 
@@ -61,6 +63,8 @@ pub struct CodeBrowserState {
     pub highlight_engine: RefCell<HighlightEngine>,
     /// State for the generation diff toggle mode.
     pub diff_state: DiffViewState,
+    /// Bidirectional spec ↔ codegen trace index for the active generator.
+    pub trace_index: Option<TraceIndex>,
 }
 
 impl CodeBrowserState {
@@ -77,6 +81,7 @@ impl CodeBrowserState {
             content_version: 0,
             highlight_engine: RefCell::new(HighlightEngine::new()),
             diff_state: DiffViewState::new(),
+            trace_index: None,
         }
     }
 
@@ -225,6 +230,8 @@ pub struct App {
 
     /// Parsed lint errors from the report's lint log.
     pub lint_errors: Vec<LintError>,
+    /// Parsed compile errors from compile logs, keyed by `"{generator}/{scope}"`.
+    pub compile_errors: HashMap<String, Vec<CompileError>>,
     /// Parsed spec index for source mapping.
     pub spec_index: Option<SpecIndex>,
 
@@ -234,6 +241,11 @@ pub struct App {
     pub cancel_token: Option<CancelToken>,
     /// Real-time log output from the active pipeline phase.
     pub live_log: String,
+
+    /// Live phase status during a pipeline run (before Completed arrives).
+    pub live_phases: Vec<(Phase, PhaseStatus)>,
+    /// Lint result received mid-pipeline (before the full report).
+    pub live_lint_result: Option<LintResult>,
 
     /// Path to the OpenAPI spec file, if discovered.
     pub spec_path: Option<PathBuf>,
@@ -277,10 +289,13 @@ impl App {
             report: None,
             validating: false,
             lint_errors: Vec::new(),
+            compile_errors: HashMap::new(),
             spec_index: None,
             pipeline_rx: None,
             cancel_token: None,
             live_log: String::new(),
+            live_phases: Vec::new(),
+            live_lint_result: None,
             spec_path: None,
             config: None,
             custom_defs: Vec::new(),
@@ -313,6 +328,10 @@ impl App {
 
     /// Number of phases without allocating entry labels.
     pub fn phase_count(&self) -> usize {
+        if self.report.is_none() && !self.live_phases.is_empty() {
+            return self.live_phases.len();
+        }
+
         let Some(report) = &self.report else {
             return 0;
         };
@@ -329,8 +348,29 @@ impl App {
         count
     }
 
-    /// Build the list of phase entries from the current report.
+    /// Build the list of phase entries from the current report or live data.
     pub fn phase_entries(&self) -> Vec<PhaseEntry> {
+        // During a pipeline run, build entries from live phase tracking.
+        if self.report.is_none() && !self.live_phases.is_empty() {
+            return self
+                .live_phases
+                .iter()
+                .map(|(phase, status)| {
+                    let error_count =
+                        if *status != PhaseStatus::Running && matches!(phase, Phase::Lint) {
+                            self.lint_errors.len()
+                        } else {
+                            0
+                        };
+                    PhaseEntry {
+                        label: phase_label(phase),
+                        status: *status,
+                        error_count,
+                    }
+                })
+                .collect();
+        }
+
         let Some(report) = &self.report else {
             return Vec::new();
         };
@@ -357,10 +397,12 @@ impl App {
 
         if let Some(steps) = &report.phases.compile {
             for step in steps {
+                let key = format!("{}/{}", step.generator, step.scope);
+                let error_count = self.compile_errors.get(&key).map(|e| e.len()).unwrap_or(0);
                 entries.push(PhaseEntry {
                     label: format!("Compile ({}/{})", step.generator, step.scope),
                     status: PhaseStatus::from_status_str(&step.status),
-                    error_count: 0,
+                    error_count,
                 });
             }
         }
@@ -370,6 +412,11 @@ impl App {
 
     /// Errors for the currently selected phase (lint only for now).
     pub fn current_errors(&self) -> &[LintError] {
+        // During validation: lint errors are available as soon as lint completes.
+        if self.report.is_none() && self.live_lint_result.is_some() && self.phase_index == 0 {
+            return &self.lint_errors;
+        }
+
         if let Some(report) = &self.report
             && report.phases.lint.is_some()
             && self.phase_index == 0
@@ -379,10 +426,80 @@ impl App {
         &[]
     }
 
-    /// The currently selected error, if any.
+    /// The currently selected lint error, if any.
     pub fn selected_error(&self) -> Option<&LintError> {
         let errors = self.current_errors();
         errors.get(self.error_index)
+    }
+
+    /// The currently selected compile error, if any.
+    pub fn selected_compile_error(&self) -> Option<&CompileError> {
+        let errors = self.current_compile_errors();
+        errors.get(self.error_index)
+    }
+
+    /// Compile errors for the currently selected phase, if it is a compile phase.
+    pub fn current_compile_errors(&self) -> &[CompileError] {
+        let Some(report) = &self.report else {
+            return &[];
+        };
+
+        let mut idx = self.phase_index;
+
+        if report.phases.lint.is_some() {
+            if idx == 0 {
+                return &[];
+            }
+            idx -= 1;
+        }
+
+        if let Some(steps) = &report.phases.generate {
+            if idx < steps.len() {
+                return &[];
+            }
+            idx -= steps.len();
+        }
+
+        if let Some(steps) = &report.phases.compile
+            && idx < steps.len()
+        {
+            let step = &steps[idx];
+            let key = format!("{}/{}", step.generator, step.scope);
+            if let Some(errors) = self.compile_errors.get(&key) {
+                return errors;
+            }
+        }
+
+        &[]
+    }
+
+    /// Returns the (generator, scope) for the currently selected phase if it is
+    /// a compile or generate phase.
+    pub fn selected_phase_generator(&self) -> Option<(&str, &str)> {
+        let report = self.report.as_ref()?;
+        let mut idx = self.phase_index;
+
+        if report.phases.lint.is_some() {
+            if idx == 0 {
+                return None;
+            }
+            idx -= 1;
+        }
+
+        if let Some(steps) = &report.phases.generate {
+            if idx < steps.len() {
+                return Some((&steps[idx].generator, &steps[idx].scope));
+            }
+            idx -= steps.len();
+        }
+
+        if let Some(steps) = &report.phases.compile
+            && idx < steps.len()
+        {
+            return Some((&steps[idx].generator, &steps[idx].scope));
+        }
+
+        None
     }
 
     /// Clamp phase_index and error_index to valid bounds.
@@ -394,7 +511,10 @@ impl App {
             self.phase_index = 0;
         }
 
-        let error_count = self.current_errors().len();
+        let error_count = self
+            .current_errors()
+            .len()
+            .max(self.current_compile_errors().len());
         if error_count > 0 {
             self.error_index = self.error_index.min(error_count - 1);
         } else {
@@ -404,6 +524,16 @@ impl App {
 
     /// Raw log text for the currently selected phase.
     pub fn current_phase_log(&self) -> &str {
+        // During validation: return the lint log if lint is done and selected.
+        if self.report.is_none() {
+            if let Some(lint) = &self.live_lint_result
+                && self.phase_index == 0
+            {
+                return &lint.log;
+            }
+            return "";
+        }
+
         let Some(report) = &self.report else {
             return "";
         };
@@ -436,6 +566,15 @@ impl App {
         }
 
         ""
+    }
+}
+
+/// Human-readable label for a pipeline `Phase`.
+fn phase_label(phase: &Phase) -> String {
+    match phase {
+        Phase::Lint => "Lint".to_string(),
+        Phase::Generate { generator, scope } => format!("Generate ({generator}/{scope})"),
+        Phase::Compile { generator, scope } => format!("Compile ({generator}/{scope})"),
     }
 }
 
