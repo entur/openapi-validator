@@ -1,0 +1,25 @@
+# Rust
+/target/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+
+# OpenAPI Validator
+.oav/
+
+# Manual testing
+/playground

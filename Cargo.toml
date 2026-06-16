@@ -1,0 +1,19 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/cli",
+    "crates/lib",
+    "crates/tui",
+]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.92.0"
+license = "EUPL-1.2"
+repository = "https://github.com/entur/openapi-validator"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = "symbols"
+panic = "abort"

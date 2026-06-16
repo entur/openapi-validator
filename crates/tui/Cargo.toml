@@ -1,11 +1,11 @@
 [package]
-name = "lazyoav"
+name = "oav-tui"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "A TUI for exploring, linting, and fixing OpenAPI specs interactively"
-license = "EUPL-1.2"
-repository = "https://github.com/entur/openapi-validator-tui"
-rust-version = "1.92.0"
 
 [lib]
 name = "lazyoav"
@@ -33,9 +33,3 @@ libc = "0.2"
 
 [dev-dependencies]
 tempfile = "3.24"
-
-[profile.release]
-lto = true
-codegen-units = 1
-strip = "symbols"
-panic = "abort"
