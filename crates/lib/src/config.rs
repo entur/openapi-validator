@@ -133,8 +133,14 @@ pub struct Config {
     pub docker_timeout: u64,
     pub search_depth: usize,
     pub jobs: Jobs,
-    /// TUI-only: action → key bindings. CLI ignores this field.
-    #[serde(default, deserialize_with = "deserialize_keys")]
+    /// TUI-only: action → key bindings. CLI ignores this field; omitted from
+    /// serialized output when empty so CLI-only `.oavc` files don't grow a
+    /// stray `keys: {}` entry.
+    #[serde(
+        default,
+        skip_serializing_if = "HashMap::is_empty",
+        deserialize_with = "deserialize_keys"
+    )]
     pub keys: HashMap<String, Vec<String>>,
 }
 
@@ -312,5 +318,23 @@ mod tests {
     fn keys_integer_value_is_rejected() {
         let result = yaml_serde::from_str::<Config>("keys:\n  scroll_down: 42\n");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn empty_keys_is_omitted_from_serialized_output() {
+        let cfg = Config::default();
+        let yaml = yaml_serde::to_string(&cfg).expect("should serialize");
+        assert!(
+            !yaml.contains("keys:"),
+            "default config should not emit a `keys:` line, got:\n{yaml}"
+        );
+    }
+
+    #[test]
+    fn populated_keys_is_serialized() {
+        let mut cfg = Config::default();
+        cfg.keys.insert("scroll_down".into(), vec!["j".into()]);
+        let yaml = yaml_serde::to_string(&cfg).expect("should serialize");
+        assert!(yaml.contains("keys:"), "expected `keys:` in:\n{yaml}");
     }
 }
