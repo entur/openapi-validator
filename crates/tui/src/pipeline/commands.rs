@@ -228,11 +228,11 @@ pub fn custom_compile_command(
 /// Resolve the config file path for a generator.
 ///
 /// Resolution order:
-/// 1. User override in `generator_config_overrides` → use that path directly
+/// 1. User override in `generator_overrides` → use that path directly
 /// 2. Built-in registry match → `/work/.oav/configs/{scope}/{generator}.yaml`
 /// 3. No match → `None` (bare `-g` only)
 pub fn resolve_config_path(cfg: &Config, generator: &str, scope: &str) -> Option<String> {
-    if let Some(user_path) = cfg.generator_config_overrides.get(generator) {
+    if let Some(user_path) = cfg.generator_overrides.get(generator) {
         return Some(user_path.clone());
     }
     if generators::find_builtin(generator, scope).is_some() {
@@ -296,7 +296,7 @@ pub fn write_builtin_configs(
     generators: &[(String, String)],
 ) -> Result<(), String> {
     for (name, scope) in generators {
-        if cfg.generator_config_overrides.contains_key(name.as_str()) {
+        if cfg.generator_overrides.contains_key(name.as_str()) {
             continue;
         }
         if let Some(def) = crate::generators::find_builtin(name, scope) {
@@ -501,7 +501,7 @@ mod tests {
     #[test]
     fn resolve_config_path_user_override() {
         let mut cfg = test_config();
-        cfg.generator_config_overrides
+        cfg.generator_overrides
             .insert("spring".into(), "/work/custom/spring.yaml".into());
         let path = resolve_config_path(&cfg, "spring", "server");
         assert_eq!(path.as_deref(), Some("/work/custom/spring.yaml"));
@@ -531,7 +531,7 @@ mod tests {
     fn write_builtin_configs_skips_overridden() {
         let tmp = tempfile::tempdir().unwrap();
         let mut cfg = test_config();
-        cfg.generator_config_overrides
+        cfg.generator_overrides
             .insert("spring".into(), "/work/custom.yaml".into());
         let generators = vec![("spring".into(), "server".into())];
         write_builtin_configs(&cfg, tmp.path(), &generators).unwrap();

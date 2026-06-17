@@ -1,66 +1,12 @@
 use anyhow::{Context, Result, bail};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
 
 use crate::cli::{Linter, Mode};
 use crate::custom::CustomGeneratorDef;
 use crate::generators;
 
-pub use oav_lib::config::{CONFIG_FILE, Jobs};
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(default)]
-pub struct Config {
-    pub spec: Option<String>,
-    pub mode: Mode,
-    pub lint: bool,
-    pub generate: bool,
-    pub compile: bool,
-    pub server_generators: Vec<String>,
-    pub client_generators: Vec<String>,
-    pub generator_overrides: HashMap<String, String>,
-    pub generator_image: String,
-    pub redocly_image: String,
-    pub linter: Linter,
-    pub spectral_image: String,
-    pub spectral_ruleset: String,
-    pub spectral_fail_severity: String,
-    pub manage_gitignore: bool,
-    pub custom_generators_dir: Option<String>,
-    pub docker_timeout: u64,
-    pub search_depth: usize,
-    pub jobs: Jobs,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            spec: None,
-            mode: Mode::Server,
-            lint: true,
-            generate: true,
-            compile: true,
-            server_generators: Vec::new(),
-            client_generators: Vec::new(),
-            generator_overrides: HashMap::new(),
-            generator_image: "openapitools/openapi-generator-cli:v7.17.0".to_string(),
-            redocly_image: "redocly/cli:1.25.5".to_string(),
-            linter: Linter::Spectral,
-            spectral_image: "stoplight/spectral:6".to_string(),
-            spectral_ruleset:
-                "https://raw.githubusercontent.com/entur/api-guidelines/refs/tags/v2/.spectral.yml"
-                    .to_string(),
-            spectral_fail_severity: "error".to_string(),
-            manage_gitignore: true,
-            custom_generators_dir: None,
-            docker_timeout: 300,
-            search_depth: 4,
-            jobs: Jobs::Auto,
-        }
-    }
-}
+pub use oav_lib::config::{CONFIG_FILE, Config, Jobs, load, write};
 
 pub fn validate(config: &Config, custom: &[CustomGeneratorDef]) -> Result<()> {
     if config.docker_timeout == 0 {
@@ -78,23 +24,6 @@ pub fn validate(config: &Config, custom: &[CustomGeneratorDef]) -> Result<()> {
     let all_client: Vec<&str> = client_owned.iter().map(|s| s.as_str()).collect();
     validate_generators("server", &config.server_generators, &all_server)?;
     validate_generators("client", &config.client_generators, &all_client)?;
-    Ok(())
-}
-
-pub fn load(root: &Path) -> Result<Config> {
-    let path = root.join(CONFIG_FILE);
-    if !path.exists() {
-        return Ok(Config::default());
-    }
-    let content = fs::read_to_string(&path).context("Failed to read .oavc")?;
-    let config = yaml_serde::from_str(&content).context("Failed to parse .oavc")?;
-    Ok(config)
-}
-
-pub fn write(root: &Path, config: &Config) -> Result<()> {
-    let path = root.join(CONFIG_FILE);
-    let content = yaml_serde::to_string(config).context("Failed to serialize config")?;
-    fs::write(&path, content).context("Failed to write .oavc")?;
     Ok(())
 }
 
@@ -160,7 +89,6 @@ fn parse_key(key: &str) -> (&str, Option<&str>) {
 
 fn print_yaml<T: Serialize>(value: &T) -> Result<()> {
     let yaml = yaml_serde::to_string(value).context("Failed to serialize value")?;
-    // Remove trailing newline and print inline
     print!("{}", yaml.trim_end());
     println!();
     Ok(())

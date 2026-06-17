@@ -1,29 +1,8 @@
-use std::fs;
-use std::path::Path;
-
-use anyhow::{Context, Result};
-use oav_lib::config::CONFIG_FILE;
-
 use super::types::Config;
 use crate::custom::CustomGeneratorDef;
 use crate::generators;
 
-/// Load config from `.oavc` in the given directory.
-/// Returns the default config if the file doesn't exist.
-pub fn load(root: &Path) -> Result<Config> {
-    let path = root.join(CONFIG_FILE);
-    if !path.exists() {
-        return Ok(Config::default());
-    }
-    if !path.is_file() {
-        anyhow::bail!(".oavc exists but is not a file: {}", path.display());
-    }
-    let content =
-        fs::read_to_string(&path).with_context(|| format!("Failed to read {}", path.display()))?;
-    let config: Config = serde_yaml::from_str(&content)
-        .with_context(|| format!("Failed to parse {}", path.display()))?;
-    Ok(config)
-}
+pub use oav_lib::config::load;
 
 /// Validate config against the built-in and custom generator registries.
 ///
@@ -55,7 +34,7 @@ pub fn validate(cfg: &Config, custom_defs: &[CustomGeneratorDef]) -> Vec<String>
         }
     }
 
-    for key in cfg.generator_config_overrides.keys() {
+    for key in cfg.generator_overrides.keys() {
         let in_server = if cfg.server_generators.is_empty() {
             is_known(key, "server")
         } else {
