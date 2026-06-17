@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 use std::time::Duration;
 
 use crate::cli::Linter;
@@ -41,21 +40,21 @@ fn run_spectral(
     );
     write_log_header(&log_path, &command_line)?;
 
-    let mut command = Command::new("docker");
-    command
-        .arg("run")
-        .arg("--rm")
-        .arg("-v")
-        .arg(format!("{workspace}:/work"))
-        .arg(image)
-        .arg("lint")
-        .arg(&spec)
-        .arg("--ruleset")
-        .arg(ruleset)
-        .arg("--fail-severity")
-        .arg(fail_severity);
+    let args = vec![
+        "run".into(),
+        "--rm".into(),
+        "-v".into(),
+        format!("{workspace}:/work"),
+        image.into(),
+        "lint".into(),
+        spec.clone(),
+        "--ruleset".into(),
+        ruleset.into(),
+        "--fail-severity".into(),
+        fail_severity.into(),
+    ];
 
-    let success = docker::run_with_logging(&mut command, &log_path, output, timeout)?;
+    let success = docker::run_with_logging(args, &log_path, output, timeout)?;
     append_status(
         root,
         "lint",
@@ -88,19 +87,19 @@ fn run_redocly(
     );
     write_log_header(&log_path, &command_line)?;
 
-    let mut command = Command::new("docker");
-    command
-        .arg("run")
-        .arg("--rm")
-        .arg("-v")
-        .arg(format!("{workspace}:/work"))
-        .arg("-w")
-        .arg(container_root)
-        .arg(redocly_image)
-        .arg("lint")
-        .arg(spec);
+    let args = vec![
+        "run".into(),
+        "--rm".into(),
+        "-v".into(),
+        format!("{workspace}:/work"),
+        "-w".into(),
+        container_root,
+        redocly_image.into(),
+        "lint".into(),
+        spec,
+    ];
 
-    let success = docker::run_with_logging(&mut command, &log_path, output, timeout)?;
+    let success = docker::run_with_logging(args, &log_path, output, timeout)?;
     append_status(
         root,
         "lint",

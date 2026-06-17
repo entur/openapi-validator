@@ -737,7 +737,6 @@ dependencies = [
  "dialoguer",
  "include_dir",
  "indicatif",
- "libc",
  "oav-lib",
  "owo-colors",
  "predicates",
@@ -756,6 +755,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "libc",
  "serde",
  "yaml_serde",
 ]

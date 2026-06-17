@@ -126,7 +126,7 @@ fn load_from_cwd(app: &mut App) {
     }
 
     // Check Docker availability.
-    app.docker_available = docker::ensure_available().is_ok();
+    app.docker_available = docker::ensure_available_with_compose().is_ok();
     if !app.docker_available {
         app.set_status(
             "Docker not available \u{2014} only cached reports can be viewed",
@@ -604,7 +604,7 @@ fn start_pipeline(app: &mut App) {
     }
 
     // Re-check Docker so we pick up changes since startup.
-    app.docker_available = docker::ensure_available().is_ok();
+    app.docker_available = docker::ensure_available_with_compose().is_ok();
     if !app.docker_available {
         app.set_status("Cannot validate: Docker not available", StatusLevel::Error);
         return;
@@ -1666,7 +1666,7 @@ mod tests {
         // it was before the call.
         start_pipeline(&mut app);
 
-        let host_has_docker = docker::ensure_available().is_ok();
+        let host_has_docker = docker::ensure_available_with_compose().is_ok();
         assert_eq!(app.docker_available, host_has_docker);
 
         if !host_has_docker {
