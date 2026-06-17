@@ -7,7 +7,7 @@ mod tests {
     use crossterm::event::{KeyCode, KeyModifiers};
 
     fn parse_config(yaml: &str) -> Config {
-        serde_yaml::from_str(yaml).expect("should parse")
+        yaml_serde::from_str(yaml).expect("should parse")
     }
 
     #[test]
