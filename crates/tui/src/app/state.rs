@@ -545,9 +545,9 @@ impl App {
         // Phase 0 is always lint if present
         let mut idx = self.phase_index;
 
-        if report.phases.lint.is_some() {
+        if let Some(lint) = &report.phases.lint {
             if idx == 0 {
-                return &report.phases.lint.as_ref().unwrap().log;
+                return &lint.log;
             }
             idx -= 1;
         }
