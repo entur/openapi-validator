@@ -54,7 +54,7 @@ pub fn load(root: &Path, dir: &str) -> Result<Vec<CustomGeneratorDef>> {
 
         let content = fs::read_to_string(&path)
             .with_context(|| format!("failed to read {}", path.display()))?;
-        let def: CustomGeneratorDef = serde_yaml::from_str(&content)
+        let def: CustomGeneratorDef = yaml_serde::from_str(&content)
             .with_context(|| format!("failed to parse {}", path.display()))?;
 
         validate_def(&def, &path)?;
