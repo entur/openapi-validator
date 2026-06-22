@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -28,12 +27,13 @@ impl CancelToken {
     }
 }
 
-/// Describes a container invocation. The `args` field is the full argument list
-/// passed to `docker` (the pipeline layer is responsible for assembling it).
+/// Describes a container invocation. `args` is the full argument list passed
+/// to `docker` (callers assemble it themselves, including any `compose`
+/// subcommand or `run --rm` prefix).
+#[derive(Debug, Clone)]
 pub struct ContainerCommand {
     pub args: Vec<String>,
     pub timeout: Duration,
-    pub log_path: Option<PathBuf>,
 }
 
 /// Outcome of a container run.
@@ -41,7 +41,6 @@ pub struct ContainerCommand {
 pub struct ContainerResult {
     pub success: bool,
     pub exit_code: Option<i32>,
-    pub log: String,
     pub cancelled: bool,
     pub timed_out: bool,
 }
@@ -69,7 +68,6 @@ mod tests {
         let token = CancelToken::new();
         token.cancel();
         assert!(token.is_cancelled());
-        // Idempotent — calling again is fine.
         token.cancel();
         assert!(token.is_cancelled());
     }

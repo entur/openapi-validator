@@ -2,7 +2,6 @@ use anyhow::{Context, Result, bail};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::time::Duration;
 
 use crate::cli::Mode;
@@ -115,26 +114,25 @@ fn run_single_generator(
     .replace("  ", " ");
     write_log_header(&log_path, &command_line)?;
 
-    let mut command = Command::new("docker");
-    command
-        .arg("run")
-        .arg("--rm")
-        .args(docker::user_args())
-        .arg("-v")
-        .arg(format!("{}:/work", ctx.root.display()))
-        .arg("-w")
-        .arg(format!("/work/{OAV_DIR}"))
-        .arg(ctx.generator_image)
-        .arg("generate")
-        .arg("-i")
-        .arg(container_spec)
-        .arg("-c")
-        .arg(container_config);
+    let mut args = vec!["run".into(), "--rm".into()];
+    args.extend(docker::user_args());
+    args.extend([
+        "-v".into(),
+        format!("{}:/work", ctx.root.display()),
+        "-w".into(),
+        format!("/work/{OAV_DIR}"),
+        ctx.generator_image.to_string(),
+        "generate".into(),
+        "-i".into(),
+        container_spec,
+        "-c".into(),
+        container_config,
+    ]);
 
     let success = if quiet {
-        docker::run_with_logging_quiet(&mut command, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
     } else {
-        docker::run_with_logging(&mut command, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
     };
 
     Ok(TaskResult {
@@ -267,20 +265,19 @@ fn run_custom_generator(
     .replace("  ", " ");
     write_log_header(&log_path, &command_line)?;
 
-    let mut command = Command::new("docker");
-    command
-        .arg("run")
-        .arg("--rm")
-        .args(docker::user_args())
-        .arg("-v")
-        .arg(format!("{}:/work", ctx.root.display()))
-        .arg(&def.generate.image)
-        .args(&cmd_args);
+    let mut args = vec!["run".into(), "--rm".into()];
+    args.extend(docker::user_args());
+    args.extend([
+        "-v".into(),
+        format!("{}:/work", ctx.root.display()),
+        def.generate.image.clone(),
+    ]);
+    args.extend(cmd_args);
 
     let success = if quiet {
-        docker::run_with_logging_quiet(&mut command, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
     } else {
-        docker::run_with_logging(&mut command, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
     };
 
     Ok(TaskResult {

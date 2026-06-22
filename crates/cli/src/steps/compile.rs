@@ -1,7 +1,6 @@
 use anyhow::{Context, Result, bail};
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 use std::time::Duration;
 
 use crate::cli::Mode;
@@ -122,21 +121,21 @@ fn run_single_builtin_compile(
     );
     write_log_header(&log_path, &command_line)?;
 
-    let mut command = Command::new("docker");
-    command
-        .arg("compose")
-        .arg("-f")
-        .arg(&compose_path)
-        .arg("--project-directory")
-        .arg(&project_dir)
-        .arg("run")
-        .arg("--rm")
-        .arg(&task.service);
+    let args = vec![
+        "compose".into(),
+        "-f".into(),
+        compose_path.display().to_string(),
+        "--project-directory".into(),
+        project_dir.display().to_string(),
+        "run".into(),
+        "--rm".into(),
+        task.service.clone(),
+    ];
 
     let success = if quiet {
-        docker::run_with_logging_quiet(&mut command, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
     } else {
-        docker::run_with_logging(&mut command, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
     };
 
     Ok(TaskResult {
@@ -171,22 +170,21 @@ fn run_single_custom_compile(
     .replace("  ", " ");
     write_log_header(&log_path, &command_line)?;
 
-    let mut command = Command::new("docker");
-    command
-        .arg("run")
-        .arg("--rm")
-        .args(docker::user_args())
-        .arg("-v")
-        .arg(format!("{}:/work", ctx.root.display()))
-        .arg("-w")
-        .arg(&workdir)
-        .arg(&block.image)
-        .args(&cmd_args);
+    let mut args = vec!["run".into(), "--rm".into()];
+    args.extend(docker::user_args());
+    args.extend([
+        "-v".into(),
+        format!("{}:/work", ctx.root.display()),
+        "-w".into(),
+        workdir.clone(),
+        block.image.clone(),
+    ]);
+    args.extend(cmd_args);
 
     let success = if quiet {
-        docker::run_with_logging_quiet(&mut command, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
     } else {
-        docker::run_with_logging(&mut command, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
     };
 
     Ok(TaskResult {

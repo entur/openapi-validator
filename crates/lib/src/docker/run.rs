@@ -12,7 +12,11 @@ const POLL_INTERVAL: Duration = Duration::from_millis(200);
 /// Spawn a container and return a channel that streams its output.
 ///
 /// The caller receives [`OutputLine::Stdout`]/[`Stderr`] as they arrive,
-/// followed by exactly one [`OutputLine::Done`] carrying the final result.
+/// followed by exactly one [`OutputLine::Done`] carrying the final result
+/// (exit status, cancellation/timeout flags).
+///
+/// No disk I/O and no log buffering: the caller decides whether and how to
+/// persist the streamed lines.
 pub fn spawn(cmd: ContainerCommand, cancel: CancelToken) -> Result<Receiver<OutputLine>> {
     let mut child = Command::new("docker")
         .args(&cmd.args)
@@ -27,7 +31,7 @@ pub fn spawn(cmd: ContainerCommand, cancel: CancelToken) -> Result<Receiver<Outp
     let (tx, rx) = mpsc::channel();
 
     std::thread::spawn(move || {
-        orchestrate(child, stdout, stderr, tx, cancel, cmd.timeout, cmd.log_path);
+        orchestrate(child, stdout, stderr, tx, cancel, cmd.timeout);
     });
 
     Ok(rx)
@@ -40,24 +44,13 @@ fn orchestrate(
     tx: Sender<OutputLine>,
     cancel: CancelToken,
     timeout: Duration,
-    log_path: Option<std::path::PathBuf>,
 ) {
-    // Accumulates all output for the final log / log_path write.
-    let log_buf = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
-
-    // --- reader threads ---------------------------------------------------
     let tx_out = tx.clone();
-    let buf_out = log_buf.clone();
     let stdout_handle = std::thread::spawn(move || {
         let reader = std::io::BufReader::new(stdout);
         for line in reader.lines() {
             match line {
                 Ok(l) => {
-                    if let Ok(mut buf) = buf_out.lock() {
-                        buf.push_str(&l);
-                        buf.push('\n');
-                    }
-                    // Receiver may be dropped — ignore send errors.
                     let _ = tx_out.send(OutputLine::Stdout(l));
                 }
                 Err(_) => break,
@@ -66,16 +59,11 @@ fn orchestrate(
     });
 
     let tx_err = tx.clone();
-    let buf_err = log_buf.clone();
     let stderr_handle = std::thread::spawn(move || {
         let reader = std::io::BufReader::new(stderr);
         for line in reader.lines() {
             match line {
                 Ok(l) => {
-                    if let Ok(mut buf) = buf_err.lock() {
-                        buf.push_str(&l);
-                        buf.push('\n');
-                    }
                     let _ = tx_err.send(OutputLine::Stderr(l));
                 }
                 Err(_) => break,
@@ -83,7 +71,6 @@ fn orchestrate(
         }
     });
 
-    // --- poll loop ---------------------------------------------------------
     let start = Instant::now();
     let mut cancelled = false;
     let mut timed_out = false;
@@ -112,25 +99,15 @@ fn orchestrate(
         std::thread::sleep(POLL_INTERVAL);
     };
 
-    // --- finalize ----------------------------------------------------------
     let _ = stdout_handle.join();
     let _ = stderr_handle.join();
 
     let exit_code = exit_status.and_then(|s| s.code());
     let success = exit_code == Some(0);
-    let log = log_buf.lock().map(|b| b.clone()).unwrap_or_default();
-
-    if let Some(path) = log_path {
-        if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-        let _ = std::fs::write(&path, &log);
-    }
 
     let _ = tx.send(OutputLine::Done(ContainerResult {
         success,
         exit_code,
-        log,
         cancelled,
         timed_out,
     }));

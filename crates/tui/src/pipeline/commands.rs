@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::config::Config;
@@ -6,8 +6,15 @@ use crate::custom::CustomGeneratorDef;
 use crate::docker::{self, ContainerCommand};
 use crate::generators;
 
+/// A docker invocation paired with the log file to persist its output to.
+#[derive(Debug, Clone)]
+pub struct DockerStep {
+    pub cmd: ContainerCommand,
+    pub log_path: PathBuf,
+}
+
 /// Build a `docker run` command for Spectral linting.
-pub fn spectral_command(cfg: &Config, spec_path: &Path, work_dir: &Path) -> ContainerCommand {
+pub fn spectral_command(cfg: &Config, spec_path: &Path, work_dir: &Path) -> DockerStep {
     let spec_name = spec_path.file_name().unwrap_or_default().to_string_lossy();
 
     let mut args = vec![
@@ -29,15 +36,17 @@ pub fn spectral_command(cfg: &Config, spec_path: &Path, work_dir: &Path) -> Cont
         "stylish".into(),
     ]);
 
-    ContainerCommand {
-        args,
-        timeout: Duration::from_secs(cfg.docker_timeout),
-        log_path: Some(work_dir.join(".oav/reports/lint/spectral.log")),
+    DockerStep {
+        cmd: ContainerCommand {
+            args,
+            timeout: Duration::from_secs(cfg.docker_timeout),
+        },
+        log_path: work_dir.join(".oav/reports/lint/spectral.log"),
     }
 }
 
 /// Build a `docker run` command for Redocly linting.
-pub fn redocly_command(cfg: &Config, spec_path: &Path, work_dir: &Path) -> ContainerCommand {
+pub fn redocly_command(cfg: &Config, spec_path: &Path, work_dir: &Path) -> DockerStep {
     let spec_name = spec_path.file_name().unwrap_or_default().to_string_lossy();
 
     let mut args = vec![
@@ -57,10 +66,12 @@ pub fn redocly_command(cfg: &Config, spec_path: &Path, work_dir: &Path) -> Conta
         "stylish".into(),
     ]);
 
-    ContainerCommand {
-        args,
-        timeout: Duration::from_secs(cfg.docker_timeout),
-        log_path: Some(work_dir.join(".oav/reports/lint/redocly.log")),
+    DockerStep {
+        cmd: ContainerCommand {
+            args,
+            timeout: Duration::from_secs(cfg.docker_timeout),
+        },
+        log_path: work_dir.join(".oav/reports/lint/redocly.log"),
     }
 }
 
@@ -75,7 +86,7 @@ pub fn generator_command(
     generator: &str,
     scope: &str,
     config_path: Option<&str>,
-) -> ContainerCommand {
+) -> DockerStep {
     let spec_name = spec_path.file_name().unwrap_or_default().to_string_lossy();
     let output_dir = format!("/work/.oav/generated/{scope}/{generator}");
 
@@ -101,10 +112,12 @@ pub fn generator_command(
         args.extend(["-c".into(), path.to_string()]);
     }
 
-    ContainerCommand {
-        args,
-        timeout: Duration::from_secs(cfg.docker_timeout),
-        log_path: Some(work_dir.join(format!(".oav/reports/generate/{scope}/{generator}.log"))),
+    DockerStep {
+        cmd: ContainerCommand {
+            args,
+            timeout: Duration::from_secs(cfg.docker_timeout),
+        },
+        log_path: work_dir.join(format!(".oav/reports/generate/{scope}/{generator}.log")),
     }
 }
 
@@ -114,12 +127,7 @@ pub fn generator_command(
 /// matching the CLI's compile approach. Service naming convention:
 /// - Server generators: `build-{generator}`
 /// - Client generators: `build-client-{generator}`
-pub fn compile_command(
-    cfg: &Config,
-    work_dir: &Path,
-    generator: &str,
-    scope: &str,
-) -> ContainerCommand {
+pub fn compile_command(cfg: &Config, work_dir: &Path, generator: &str, scope: &str) -> DockerStep {
     let service = compile_service_name(generator, scope);
     let compose_file = work_dir.join(".oav/docker-compose.yaml");
     let project_dir = work_dir.join(".oav");
@@ -140,10 +148,12 @@ pub fn compile_command(
         service,
     ];
 
-    ContainerCommand {
-        args,
-        timeout: Duration::from_secs(cfg.docker_timeout),
-        log_path: Some(work_dir.join(format!(".oav/reports/compile/{scope}/{generator}.log"))),
+    DockerStep {
+        cmd: ContainerCommand {
+            args,
+            timeout: Duration::from_secs(cfg.docker_timeout),
+        },
+        log_path: work_dir.join(format!(".oav/reports/compile/{scope}/{generator}.log")),
     }
 }
 
@@ -162,7 +172,7 @@ pub fn custom_generate_command(
     spec_path: &Path,
     work_dir: &Path,
     def: &CustomGeneratorDef,
-) -> ContainerCommand {
+) -> DockerStep {
     let spec_name = spec_path.file_name().unwrap_or_default().to_string_lossy();
     let container_spec = format!("/work/{spec_name}");
     let resolved_command = def.generate.command.replace("{spec}", &container_spec);
@@ -180,13 +190,15 @@ pub fn custom_generate_command(
     args.push(def.generate.image.clone());
     args.extend(cmd_args);
 
-    ContainerCommand {
-        args,
-        timeout: Duration::from_secs(cfg.docker_timeout),
-        log_path: Some(work_dir.join(format!(
+    DockerStep {
+        cmd: ContainerCommand {
+            args,
+            timeout: Duration::from_secs(cfg.docker_timeout),
+        },
+        log_path: work_dir.join(format!(
             ".oav/reports/generate/{}/{}.log",
             def.scope, def.name
-        ))),
+        )),
     }
 }
 
@@ -198,7 +210,7 @@ pub fn custom_compile_command(
     work_dir: &Path,
     def: &CustomGeneratorDef,
     compile: &crate::custom::CompileBlock,
-) -> ContainerCommand {
+) -> DockerStep {
     let workdir = format!("/work/.oav/generated/{}/{}", def.scope, def.name);
     let cmd_args: Vec<String> =
         shell_words::split(&compile.command).unwrap_or_else(|_| vec![compile.command.clone()]);
@@ -215,13 +227,15 @@ pub fn custom_compile_command(
     ];
     args.extend(cmd_args);
 
-    ContainerCommand {
-        args,
-        timeout: Duration::from_secs(cfg.docker_timeout),
-        log_path: Some(work_dir.join(format!(
+    DockerStep {
+        cmd: ContainerCommand {
+            args,
+            timeout: Duration::from_secs(cfg.docker_timeout),
+        },
+        log_path: work_dir.join(format!(
             ".oav/reports/compile/{}/{}.log",
             def.scope, def.name
-        ))),
+        )),
     }
 }
 
@@ -340,30 +354,31 @@ mod tests {
     fn spectral_command_builds_correct_args() {
         let cfg = test_config();
         let cmd = spectral_command(&cfg, Path::new("/tmp/spec.yaml"), Path::new("/tmp"));
-        assert!(cmd.args.contains(&"run".into()));
-        assert!(cmd.args.contains(&"--rm".into()));
-        assert!(cmd.args.contains(&cfg.spectral_image));
-        assert!(cmd.args.contains(&"lint".into()));
-        assert!(cmd.args.contains(&"/work/spec.yaml".into()));
-        assert!(cmd.args.contains(&"--ruleset".into()));
-        assert!(cmd.args.contains(&cfg.spectral_ruleset));
-        assert!(cmd.args.contains(&"stylish".into()));
+        assert!(cmd.cmd.args.contains(&"run".into()));
+        assert!(cmd.cmd.args.contains(&"--rm".into()));
+        assert!(cmd.cmd.args.contains(&cfg.spectral_image));
+        assert!(cmd.cmd.args.contains(&"lint".into()));
+        assert!(cmd.cmd.args.contains(&"/work/spec.yaml".into()));
+        assert!(cmd.cmd.args.contains(&"--ruleset".into()));
+        assert!(cmd.cmd.args.contains(&cfg.spectral_ruleset));
+        assert!(cmd.cmd.args.contains(&"stylish".into()));
     }
 
     #[test]
     fn redocly_command_builds_correct_args() {
         let cfg = test_config();
         let cmd = redocly_command(&cfg, Path::new("/tmp/spec.yaml"), Path::new("/tmp"));
-        assert!(cmd.args.contains(&cfg.redocly_image));
-        assert!(cmd.args.contains(&"lint".into()));
-        assert!(cmd.args.contains(&"/work/spec.yaml".into()));
+        assert!(cmd.cmd.args.contains(&cfg.redocly_image));
+        assert!(cmd.cmd.args.contains(&"lint".into()));
+        assert!(cmd.cmd.args.contains(&"/work/spec.yaml".into()));
         // -w /work sets the container working directory so Redocly discovers redocly.yaml.
         let w_pos = cmd
+            .cmd
             .args
             .iter()
             .position(|a| a == "-w")
             .expect("-w flag missing");
-        assert_eq!(cmd.args[w_pos + 1], "/work");
+        assert_eq!(cmd.cmd.args[w_pos + 1], "/work");
     }
 
     #[test]
@@ -377,15 +392,16 @@ mod tests {
             "server",
             None,
         );
-        assert!(cmd.args.contains(&cfg.generator_image));
-        assert!(cmd.args.contains(&"generate".into()));
-        assert!(cmd.args.contains(&"-g".into()));
-        assert!(cmd.args.contains(&"spring".into()));
+        assert!(cmd.cmd.args.contains(&cfg.generator_image));
+        assert!(cmd.cmd.args.contains(&"generate".into()));
+        assert!(cmd.cmd.args.contains(&"-g".into()));
+        assert!(cmd.cmd.args.contains(&"spring".into()));
         assert!(
-            cmd.args
+            cmd.cmd
+                .args
                 .contains(&"/work/.oav/generated/server/spring".into())
         );
-        assert!(!cmd.args.contains(&"-c".into()));
+        assert!(!cmd.cmd.args.contains(&"-c".into()));
     }
 
     #[test]
@@ -399,9 +415,10 @@ mod tests {
             "server",
             Some("/work/.oav/configs/server/spring.yaml"),
         );
-        assert!(cmd.args.contains(&"-c".into()));
+        assert!(cmd.cmd.args.contains(&"-c".into()));
         assert!(
-            cmd.args
+            cmd.cmd
+                .args
                 .contains(&"/work/.oav/configs/server/spring.yaml".into())
         );
     }
@@ -410,11 +427,11 @@ mod tests {
     fn compile_command_uses_docker_compose() {
         let cfg = test_config();
         let cmd = compile_command(&cfg, Path::new("/tmp"), "spring", "server");
-        assert_eq!(cmd.args[0], "compose");
-        assert!(cmd.args.contains(&"-f".into()));
-        assert!(cmd.args.contains(&"run".into()));
-        assert!(cmd.args.contains(&"--rm".into()));
-        assert!(cmd.args.contains(&"build-spring".into()));
+        assert_eq!(cmd.cmd.args[0], "compose");
+        assert!(cmd.cmd.args.contains(&"-f".into()));
+        assert!(cmd.cmd.args.contains(&"run".into()));
+        assert!(cmd.cmd.args.contains(&"--rm".into()));
+        assert!(cmd.cmd.args.contains(&"build-spring".into()));
     }
 
     #[test]
@@ -422,15 +439,19 @@ mod tests {
         let cfg = test_config();
         let cmd = compile_command(&cfg, Path::new("/tmp"), "spring", "server");
         // Compile containers run as their image's default user — no --user flag.
-        assert!(!cmd.args.contains(&"--user".into()));
-        assert_eq!(cmd.args.last().unwrap(), "build-spring");
+        assert!(!cmd.cmd.args.contains(&"--user".into()));
+        assert_eq!(cmd.cmd.args.last().unwrap(), "build-spring");
     }
 
     #[test]
     fn compile_command_client_service_naming() {
         let cfg = test_config();
         let cmd = compile_command(&cfg, Path::new("/tmp"), "typescript-axios", "client");
-        assert!(cmd.args.contains(&"build-client-typescript-axios".into()));
+        assert!(
+            cmd.cmd
+                .args
+                .contains(&"build-client-typescript-axios".into())
+        );
     }
 
     #[test]
@@ -545,7 +566,7 @@ mod tests {
         let mut cfg = test_config();
         cfg.docker_timeout = 60;
         let cmd = spectral_command(&cfg, Path::new("/tmp/spec.yaml"), Path::new("/tmp"));
-        assert_eq!(cmd.timeout, Duration::from_secs(60));
+        assert_eq!(cmd.cmd.timeout, Duration::from_secs(60));
     }
 
     fn custom_def(name: &str, scope: &str) -> CustomGeneratorDef {
@@ -591,10 +612,10 @@ mod tests {
         let def = custom_def("my-gen", "server");
         let cmd =
             custom_generate_command(&cfg, Path::new("/tmp/spec.yaml"), Path::new("/tmp"), &def);
-        assert!(cmd.args.contains(&"my-image:latest".into()));
+        assert!(cmd.cmd.args.contains(&"my-image:latest".into()));
         // {spec} should be replaced with /work/spec.yaml
-        assert!(cmd.args.iter().any(|a| a.contains("/work/spec.yaml")));
-        assert!(!cmd.args.iter().any(|a| a.contains("{spec}")));
+        assert!(cmd.cmd.args.iter().any(|a| a.contains("/work/spec.yaml")));
+        assert!(!cmd.cmd.args.iter().any(|a| a.contains("{spec}")));
     }
 
     #[test]
@@ -603,8 +624,16 @@ mod tests {
         let def = custom_def("my-gen", "server");
         let compile = def.compile.as_ref().unwrap();
         let cmd = custom_compile_command(&cfg, Path::new("/tmp"), &def, compile);
-        assert!(cmd.args.contains(&"build-image:latest".into()));
-        let w_pos = cmd.args.iter().position(|a| a == "-w").expect("-w missing");
-        assert_eq!(cmd.args[w_pos + 1], "/work/.oav/generated/server/my-gen");
+        assert!(cmd.cmd.args.contains(&"build-image:latest".into()));
+        let w_pos = cmd
+            .cmd
+            .args
+            .iter()
+            .position(|a| a == "-w")
+            .expect("-w missing");
+        assert_eq!(
+            cmd.cmd.args[w_pos + 1],
+            "/work/.oav/generated/server/my-gen"
+        );
     }
 }

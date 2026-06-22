@@ -1,156 +1,72 @@
 use anyhow::{Context, Result, bail};
-use std::fs::{File, OpenOptions};
-use std::io::{self, Read, Write as IoWrite};
+use std::fs::OpenOptions;
+use std::io::{self, Write as IoWrite};
 use std::path::Path;
-use std::process::{Command, Stdio};
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+
+use oav_lib::docker::{CancelToken, ContainerCommand, OutputLine, spawn};
 
 use crate::output::Output;
 
-pub fn ensure_available() -> Result<()> {
-    let status = Command::new("docker")
-        .arg("version")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
+pub use oav_lib::docker::{ensure_available, user_args, user_flag};
 
-    match status {
-        Ok(status) if status.success() => Ok(()),
-        Ok(_) => bail!("Docker is installed but not responding. Is the daemon running?"),
-        Err(_) => bail!("Docker not found in PATH."),
-    }
-}
-
-pub fn user_args() -> Vec<String> {
-    #[cfg(unix)]
-    {
-        let uid = unsafe { libc::geteuid() };
-        let gid = unsafe { libc::getegid() };
-        vec!["--user".to_string(), format!("{uid}:{gid}")]
-    }
-    #[cfg(not(unix))]
-    {
-        Vec::new()
-    }
-}
-
-pub fn user_flag() -> String {
-    #[cfg(unix)]
-    {
-        let uid = unsafe { libc::geteuid() };
-        let gid = unsafe { libc::getegid() };
-        format!("--user {uid}:{gid}")
-    }
-    #[cfg(not(unix))]
-    {
-        String::new()
-    }
-}
-
+/// Run a docker command, streaming output to the log file (appended) and to
+/// stdout/stderr when `output.verbose` is true. Returns `Ok(success)` for
+/// normal completions; bails on spawn failure or timeout.
 pub fn run_with_logging(
-    command: &mut Command,
+    args: Vec<String>,
     log_path: &Path,
     output: &Output,
     timeout: Duration,
 ) -> Result<bool> {
-    if output.verbose {
-        command.stdout(Stdio::piped()).stderr(Stdio::piped());
-        let mut child = command.spawn().context("Failed to start Docker command")?;
-        let stdout = child.stdout.take().context("Missing stdout")?;
-        let stderr = child.stderr.take().context("Missing stderr")?;
-
-        let log_file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(log_path)
-            .context("Failed to open log file")?;
-        let log = Arc::new(Mutex::new(log_file));
-
-        let out_log = Arc::clone(&log);
-        let out_handle = thread::spawn(move || stream_output(stdout, io::stdout(), out_log));
-        let err_log = Arc::clone(&log);
-        let err_handle = thread::spawn(move || stream_output(stderr, io::stderr(), err_log));
-
-        let success = wait_with_timeout(&mut child, timeout)?;
-        let _ = out_handle.join();
-        let _ = err_handle.join();
-        Ok(success)
-    } else {
-        let log_file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(log_path)
-            .context("Failed to open log file")?;
-        let log_err = log_file.try_clone().context("Failed to clone log file")?;
-        command
-            .stdout(Stdio::from(log_file))
-            .stderr(Stdio::from(log_err));
-        let mut child = command.spawn().context("Failed to start Docker command")?;
-        let success = wait_with_timeout(&mut child, timeout)?;
-        Ok(success)
-    }
+    run_inner(args, log_path, timeout, output.verbose)
 }
 
+/// Like [`run_with_logging`] but never tees to stdout/stderr.
 pub fn run_with_logging_quiet(
-    command: &mut Command,
+    args: Vec<String>,
     log_path: &Path,
     timeout: Duration,
 ) -> Result<bool> {
-    let log_file = OpenOptions::new()
+    run_inner(args, log_path, timeout, false)
+}
+
+fn run_inner(args: Vec<String>, log_path: &Path, timeout: Duration, tee: bool) -> Result<bool> {
+    let cmd = ContainerCommand { args, timeout };
+    let rx = spawn(cmd, CancelToken::new()).context("Failed to start Docker command")?;
+
+    let mut log = OpenOptions::new()
         .create(true)
         .append(true)
         .open(log_path)
-        .context("Failed to open log file")?;
-    let log_err = log_file.try_clone().context("Failed to clone log file")?;
-    command
-        .stdout(Stdio::from(log_file))
-        .stderr(Stdio::from(log_err));
-    let mut child = command.spawn().context("Failed to start Docker command")?;
-    let success = wait_with_timeout(&mut child, timeout)?;
-    Ok(success)
-}
+        .with_context(|| format!("Failed to open log file {}", log_path.display()))?;
 
-fn wait_with_timeout(child: &mut std::process::Child, timeout: Duration) -> Result<bool> {
-    let start = Instant::now();
-    loop {
-        match child.try_wait().context("Failed to check process status")? {
-            Some(status) => return Ok(status.success()),
-            None if start.elapsed() >= timeout => {
-                if let Err(e) = child.kill() {
-                    // InvalidInput means the process already exited — harmless.
-                    // Anything else means we may have failed to stop it.
-                    if e.kind() != io::ErrorKind::InvalidInput {
-                        eprintln!("Warning: failed to kill timed-out process: {e}");
-                    }
+    let mut stdout = io::stdout();
+    let mut stderr = io::stderr();
+
+    for line in rx {
+        match line {
+            OutputLine::Stdout(s) => {
+                writeln!(log, "{s}").context("Failed to write to log file")?;
+                if tee {
+                    writeln!(stdout, "{s}").ok();
                 }
-                bail!("Docker command timed out after {}s", timeout.as_secs());
             }
-            None => thread::sleep(Duration::from_millis(500)),
+            OutputLine::Stderr(s) => {
+                writeln!(log, "{s}").context("Failed to write to log file")?;
+                if tee {
+                    writeln!(stderr, "{s}").ok();
+                }
+            }
+            OutputLine::Done(result) => {
+                if result.timed_out {
+                    bail!("Docker command timed out after {}s", timeout.as_secs());
+                }
+                return Ok(result.success);
+            }
         }
     }
-}
 
-fn stream_output<R: Read + Send + 'static>(
-    mut reader: R,
-    mut writer: impl IoWrite + Send + 'static,
-    log: Arc<Mutex<File>>,
-) -> io::Result<()> {
-    let mut buffer = [0u8; 8192];
-    loop {
-        let count = reader.read(&mut buffer)?;
-        if count == 0 {
-            break;
-        }
-        {
-            let mut file = log
-                .lock()
-                .map_err(|_| io::Error::other("Log file lock poisoned"))?;
-            file.write_all(&buffer[..count])?;
-        }
-        writer.write_all(&buffer[..count])?;
-        writer.flush()?;
-    }
-    Ok(())
+    // Channel closed without a Done frame — treat as failure.
+    Ok(false)
 }
