@@ -41,7 +41,6 @@ pub struct ContainerCommand {
 pub struct ContainerResult {
     pub success: bool,
     pub exit_code: Option<i32>,
-    pub log: String,
     pub cancelled: bool,
     pub timed_out: bool,
 }

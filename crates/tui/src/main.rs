@@ -125,15 +125,6 @@ fn load_from_cwd(app: &mut App) {
         eprintln!("warning: failed to scaffold .oav/ dirs: {e}");
     }
 
-    // Check Docker availability.
-    app.docker_available = docker::ensure_available_with_compose().is_ok();
-    if !app.docker_available {
-        app.set_status(
-            "Docker not available \u{2014} only cached reports can be viewed",
-            StatusLevel::Warn,
-        );
-    }
-
     // Load config, surfacing parse errors.
     let cfg = match config::load(&cwd) {
         Ok(c) => c,
@@ -145,6 +136,19 @@ fn load_from_cwd(app: &mut App) {
             config::Config::default()
         }
     };
+
+    // Check Docker availability. Compose is only required when compile is enabled.
+    app.docker_available = if cfg.compile {
+        docker::ensure_available_with_compose().is_ok()
+    } else {
+        docker::ensure_available().is_ok()
+    };
+    if !app.docker_available {
+        app.set_status(
+            "Docker not available \u{2014} only cached reports can be viewed",
+            StatusLevel::Warn,
+        );
+    }
 
     // Manage .gitignore if enabled.
     if cfg.manage_gitignore
@@ -603,13 +607,6 @@ fn start_pipeline(app: &mut App) {
         token.cancel();
     }
 
-    // Re-check Docker so we pick up changes since startup.
-    app.docker_available = docker::ensure_available_with_compose().is_ok();
-    if !app.docker_available {
-        app.set_status("Cannot validate: Docker not available", StatusLevel::Error);
-        return;
-    }
-
     let cwd = match std::env::current_dir() {
         Ok(p) => p,
         Err(_) => return,
@@ -623,6 +620,19 @@ fn start_pipeline(app: &mut App) {
             c
         }
     };
+
+    // Re-check Docker so we pick up changes since startup. Compose is only
+    // required when compile is enabled.
+    let docker_ok = if cfg.compile {
+        docker::ensure_available_with_compose().is_ok()
+    } else {
+        docker::ensure_available().is_ok()
+    };
+    app.docker_available = docker_ok;
+    if !docker_ok {
+        app.set_status("Cannot validate: Docker not available", StatusLevel::Error);
+        return;
+    }
 
     let spec_path = match resolve_spec_path(&cwd, &cfg) {
         Some(p) => p,

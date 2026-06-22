@@ -32,7 +32,7 @@ pub fn ensure_available_with_compose() -> Result<()> {
     if !compose.success() {
         bail!(
             "Docker Compose plugin is not available. \
-             Install it via `docker plugin install compose` or your package manager."
+             Update Docker Desktop or install the `docker-compose-plugin` package."
         );
     }
 

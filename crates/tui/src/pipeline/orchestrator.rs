@@ -331,6 +331,8 @@ fn run_container(
     for line in container_rx {
         match line {
             OutputLine::Stdout(s) | OutputLine::Stderr(s) => {
+                log.push_str(&s);
+                log.push('\n');
                 let _ = tx.send(PipelineEvent::Log {
                     phase: phase.clone(),
                     line: s,
@@ -338,7 +340,6 @@ fn run_container(
             }
             OutputLine::Done(result) => {
                 success = result.success && !result.cancelled;
-                log = result.log;
                 break;
             }
         }

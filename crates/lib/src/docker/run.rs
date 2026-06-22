@@ -13,9 +13,10 @@ const POLL_INTERVAL: Duration = Duration::from_millis(200);
 ///
 /// The caller receives [`OutputLine::Stdout`]/[`Stderr`] as they arrive,
 /// followed by exactly one [`OutputLine::Done`] carrying the final result
-/// (full buffered log, exit status, cancellation/timeout flags).
+/// (exit status, cancellation/timeout flags).
 ///
-/// No disk I/O: the caller decides whether and how to persist the log.
+/// No disk I/O and no log buffering: the caller decides whether and how to
+/// persist the streamed lines.
 pub fn spawn(cmd: ContainerCommand, cancel: CancelToken) -> Result<Receiver<OutputLine>> {
     let mut child = Command::new("docker")
         .args(&cmd.args)
@@ -44,19 +45,12 @@ fn orchestrate(
     cancel: CancelToken,
     timeout: Duration,
 ) {
-    let log_buf = std::sync::Arc::new(std::sync::Mutex::new(String::new()));
-
     let tx_out = tx.clone();
-    let buf_out = log_buf.clone();
     let stdout_handle = std::thread::spawn(move || {
         let reader = std::io::BufReader::new(stdout);
         for line in reader.lines() {
             match line {
                 Ok(l) => {
-                    if let Ok(mut buf) = buf_out.lock() {
-                        buf.push_str(&l);
-                        buf.push('\n');
-                    }
                     let _ = tx_out.send(OutputLine::Stdout(l));
                 }
                 Err(_) => break,
@@ -65,16 +59,11 @@ fn orchestrate(
     });
 
     let tx_err = tx.clone();
-    let buf_err = log_buf.clone();
     let stderr_handle = std::thread::spawn(move || {
         let reader = std::io::BufReader::new(stderr);
         for line in reader.lines() {
             match line {
                 Ok(l) => {
-                    if let Ok(mut buf) = buf_err.lock() {
-                        buf.push_str(&l);
-                        buf.push('\n');
-                    }
                     let _ = tx_err.send(OutputLine::Stderr(l));
                 }
                 Err(_) => break,
@@ -115,12 +104,10 @@ fn orchestrate(
 
     let exit_code = exit_status.and_then(|s| s.code());
     let success = exit_code == Some(0);
-    let log = log_buf.lock().map(|b| b.clone()).unwrap_or_default();
 
     let _ = tx.send(OutputLine::Done(ContainerResult {
         success,
         exit_code,
-        log,
         cancelled,
         timed_out,
     }));
