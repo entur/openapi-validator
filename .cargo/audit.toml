@@ -1,0 +1,15 @@
+[advisories]
+ignore = [
+    # yaml-rust is unmaintained; this is a transitive dependency pulled in by
+    # syntect (v5.3.0, latest) via its `parsing` feature, which two-face requires.
+    # There is no patched version of yaml-rust — the maintained fork (yaml-rust2)
+    # has an incompatible crate name and cannot be substituted via [patch]. We will
+    # remove this ignore when syntect migrates to yaml-rust2 or an equivalent.
+    "RUSTSEC-2024-0320",
+
+    # bincode 1.3.3 is unmaintained; this is a transitive dependency pulled in by
+    # syntect (v5.3.0, latest) via its `dump-load` feature, which two-face requires.
+    # bincode 1.3.3 is considered complete by its authors and has no active CVEs.
+    # We will remove this ignore when syntect drops the bincode 1.x dependency.
+    "RUSTSEC-2025-0141",
+]
