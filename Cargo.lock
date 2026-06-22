@@ -1118,6 +1118,7 @@ dependencies = [
  "clap",
  "libc",
  "serde",
+ "tempfile",
  "yaml_serde",
 ]
 

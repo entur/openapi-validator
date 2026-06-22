@@ -2,7 +2,6 @@ mod agent;
 mod cli;
 mod completions;
 mod config;
-mod custom;
 mod docker;
 mod fetch;
 mod generators;
@@ -10,6 +9,8 @@ mod json_report;
 mod output;
 mod steps;
 mod util;
+
+use oav_lib::custom;
 
 pub const EXIT_SUCCESS: i32 = 0;
 pub const EXIT_VALIDATION_FAILURE: i32 = 1;
@@ -704,7 +705,7 @@ fn parse_jobs_arg(raw: &str) -> Result<config::Jobs> {
 
 fn load_custom_defs(root: &Path, cfg: &Config) -> Result<Vec<custom::CustomGeneratorDef>> {
     match &cfg.custom_generators_dir {
-        Some(dir) => custom::load(root, dir),
+        Some(dir) => custom::load_strict(root, dir),
         None => Ok(Vec::new()),
     }
 }

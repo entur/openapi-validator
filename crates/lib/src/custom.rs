@@ -27,18 +27,33 @@ pub struct CompileBlock {
     pub command: String,
 }
 
-/// Load custom generator definitions from YAML files in the given directory.
+/// Load custom generator definitions from `<root>/<dir>`.
 ///
-/// Returns an empty vec if the directory is missing or unreadable.
-/// Validates names, scopes, required fields, and checks for collisions
-/// with builtins and duplicates.
+/// Returns an empty vec if the directory does not exist.
 pub fn load(root: &Path, dir: &str) -> Result<Vec<CustomGeneratorDef>> {
     let custom_dir = root.join(dir);
     if !custom_dir.is_dir() {
         return Ok(Vec::new());
     }
+    load_from_dir(&custom_dir)
+}
 
-    let mut entries: Vec<_> = fs::read_dir(&custom_dir)
+/// Load custom generator definitions from `<root>/<dir>`.
+///
+/// Returns an error if the directory does not exist.
+pub fn load_strict(root: &Path, dir: &str) -> Result<Vec<CustomGeneratorDef>> {
+    let custom_dir = root.join(dir);
+    if !custom_dir.is_dir() {
+        bail!(
+            "custom_generators_dir '{}' does not exist or is not a directory",
+            custom_dir.display()
+        );
+    }
+    load_from_dir(&custom_dir)
+}
+
+fn load_from_dir(custom_dir: &Path) -> Result<Vec<CustomGeneratorDef>> {
+    let mut entries: Vec<_> = fs::read_dir(custom_dir)
         .with_context(|| format!("failed to read {}", custom_dir.display()))?
         .collect::<Result<Vec<_>, _>>()
         .with_context(|| format!("failed to iterate {}", custom_dir.display()))?;
@@ -122,8 +137,8 @@ fn validate_def(def: &CustomGeneratorDef, path: &Path) -> Result<()> {
 fn check_collisions(defs: &[CustomGeneratorDef]) -> Result<()> {
     let mut seen = HashSet::new();
     for def in defs {
-        let builtins = generators::builtin_generators_for_scope(&def.scope);
-        if builtins.iter().any(|g| g.name == def.name) {
+        let builtins = generators::names_for_scope(&def.scope);
+        if builtins.contains(&def.name.as_str()) {
             bail!(
                 "custom generator '{}' collides with built-in {} generator",
                 def.name,
@@ -158,10 +173,24 @@ pub fn client_names(defs: &[CustomGeneratorDef]) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn tmp() -> TempDir {
+        tempfile::tempdir().unwrap()
+    }
+
+    fn valid_yaml(name: &str, scope: &str) -> String {
+        format!(
+            "name: {name}\nscope: {scope}\ngenerate:\n  image: img:latest\n  command: gen cmd\n"
+        )
+    }
+
+    // ── is_safe_name ────────────────────────────────────────────────────
 
     #[test]
     fn safe_name_valid() {
-        for name in ["my-gen", "gen.v2", "a", "1foo", "a_b"] {
+        for name in ["my-gen", "swagger-ts-api", "gen.v2", "a", "1foo", "a_b"] {
             assert!(is_safe_name(name), "expected '{name}' to be safe");
         }
     }
@@ -173,94 +202,120 @@ mod tests {
         }
     }
 
-    fn valid_yaml(name: &str, scope: &str) -> String {
-        format!(
-            "name: {name}\nscope: {scope}\ngenerate:\n  image: img:latest\n  command: gen cmd\n"
-        )
-    }
-
-    #[test]
-    fn load_valid_single_def() {
-        let tmp = tempfile::tempdir().unwrap();
-        let custom = tmp.path().join("generators");
-        fs::create_dir(&custom).unwrap();
-        fs::write(custom.join("my-gen.yaml"), valid_yaml("my-gen", "server")).unwrap();
-
-        let defs = load(tmp.path(), "generators").unwrap();
-        assert_eq!(defs.len(), 1);
-        assert_eq!(defs[0].name, "my-gen");
-        assert_eq!(defs[0].scope, "server");
-    }
+    // ── load (lenient) ──────────────────────────────────────────────────
 
     #[test]
     fn load_missing_dir_returns_empty() {
-        let tmp = tempfile::tempdir().unwrap();
-        let defs = load(tmp.path(), "nope").unwrap();
+        let t = tmp();
+        let defs = load(t.path(), "nope").unwrap();
         assert!(defs.is_empty());
     }
 
     #[test]
-    fn load_builtin_collision_rejected() {
-        let tmp = tempfile::tempdir().unwrap();
-        let custom = tmp.path().join("generators");
+    fn load_empty_dir() {
+        let t = tmp();
+        let custom = t.path().join("custom");
         fs::create_dir(&custom).unwrap();
-        fs::write(custom.join("spring.yaml"), valid_yaml("spring", "server")).unwrap();
-
-        let err = load(tmp.path(), "generators").unwrap_err();
-        assert!(err.to_string().contains("collides with built-in"));
+        assert!(load(t.path(), "custom").unwrap().is_empty());
     }
 
     #[test]
-    fn load_duplicate_names_rejected() {
-        let tmp = tempfile::tempdir().unwrap();
-        let custom = tmp.path().join("generators");
+    fn load_valid_single_def() {
+        let t = tmp();
+        let custom = t.path().join("custom");
         fs::create_dir(&custom).unwrap();
-        fs::write(custom.join("a.yaml"), valid_yaml("my-gen", "client")).unwrap();
-        fs::write(custom.join("b.yaml"), valid_yaml("my-gen", "client")).unwrap();
+        fs::write(custom.join("my-gen.yaml"), valid_yaml("my-gen", "server")).unwrap();
 
-        let err = load(tmp.path(), "generators").unwrap_err();
-        assert!(err.to_string().contains("duplicate"));
-    }
-
-    #[test]
-    fn load_invalid_scope_rejected() {
-        let tmp = tempfile::tempdir().unwrap();
-        let custom = tmp.path().join("generators");
-        fs::create_dir(&custom).unwrap();
-        fs::write(custom.join("gen.yaml"), valid_yaml("my-gen", "both")).unwrap();
-
-        let err = load(tmp.path(), "generators").unwrap_err();
-        assert!(err.to_string().contains("invalid scope"));
+        let defs = load(t.path(), "custom").unwrap();
+        assert_eq!(defs.len(), 1);
+        assert_eq!(defs[0].name, "my-gen");
+        assert_eq!(defs[0].scope, "server");
+        assert_eq!(defs[0].generate.image, "img:latest");
     }
 
     #[test]
     fn load_skips_non_yaml() {
-        let tmp = tempfile::tempdir().unwrap();
-        let custom = tmp.path().join("generators");
+        let t = tmp();
+        let custom = t.path().join("custom");
         fs::create_dir(&custom).unwrap();
         fs::write(custom.join("readme.txt"), "not yaml").unwrap();
         fs::write(custom.join("my-gen.yml"), valid_yaml("my-gen", "server")).unwrap();
 
-        let defs = load(tmp.path(), "generators").unwrap();
+        let defs = load(t.path(), "custom").unwrap();
         assert_eq!(defs.len(), 1);
     }
 
     #[test]
-    fn same_name_different_scope_ok() {
-        let tmp = tempfile::tempdir().unwrap();
-        let custom = tmp.path().join("generators");
+    fn load_same_name_different_scope_ok() {
+        let t = tmp();
+        let custom = t.path().join("custom");
         fs::create_dir(&custom).unwrap();
         fs::write(custom.join("a.yaml"), valid_yaml("my-gen", "server")).unwrap();
         fs::write(custom.join("b.yaml"), valid_yaml("my-gen", "client")).unwrap();
 
-        let defs = load(tmp.path(), "generators").unwrap();
-        assert_eq!(defs.len(), 2);
+        assert_eq!(load(t.path(), "custom").unwrap().len(), 2);
     }
 
     #[test]
-    fn with_compile_block() {
-        let tmp = tempfile::tempdir().unwrap();
-        let custom = tmp.path().join("generators");
+    fn load_builtin_collision_rejected() {
+        let t = tmp();
+        let custom = t.path().join("custom");
+        fs::create_dir(&custom).unwrap();
+        fs::write(custom.join("spring.yaml"), valid_yaml("spring", "server")).unwrap();
+
+        let err = load(t.path(), "custom").unwrap_err();
+        assert!(err.to_string().contains("collides with built-in"), "{err}");
+    }
+
+    #[test]
+    fn load_duplicate_names_rejected() {
+        let t = tmp();
+        let custom = t.path().join("custom");
+        fs::create_dir(&custom).unwrap();
+        fs::write(custom.join("a.yaml"), valid_yaml("my-gen", "client")).unwrap();
+        fs::write(custom.join("b.yaml"), valid_yaml("my-gen", "client")).unwrap();
+
+        let err = load(t.path(), "custom").unwrap_err();
+        assert!(err.to_string().contains("duplicate"), "{err}");
+    }
+
+    #[test]
+    fn load_invalid_scope_rejected() {
+        let t = tmp();
+        let custom = t.path().join("custom");
+        fs::create_dir(&custom).unwrap();
+        fs::write(custom.join("gen.yaml"), valid_yaml("my-gen", "both")).unwrap();
+
+        let err = load(t.path(), "custom").unwrap_err();
+        assert!(err.to_string().contains("invalid scope"), "{err}");
+    }
+
+    #[test]
+    fn load_invalid_name_rejected() {
+        let t = tmp();
+        let custom = t.path().join("custom");
+        fs::create_dir(&custom).unwrap();
+        fs::write(custom.join("gen.yaml"), valid_yaml("Bad-Name", "server")).unwrap();
+
+        let err = load(t.path(), "custom").unwrap_err();
+        assert!(err.to_string().contains("invalid name"), "{err}");
+    }
+
+    #[test]
+    fn load_missing_generate_image_is_parse_error() {
+        let t = tmp();
+        let custom = t.path().join("custom");
+        fs::create_dir(&custom).unwrap();
+        fs::write(custom.join("gen.yaml"), "name: my-gen\nscope: server\n").unwrap();
+
+        let err = load(t.path(), "custom").unwrap_err();
+        assert!(err.to_string().contains("failed to parse"), "{err}");
+    }
+
+    #[test]
+    fn load_with_compile_block() {
+        let t = tmp();
+        let custom = t.path().join("custom");
         fs::create_dir(&custom).unwrap();
         let yaml = "\
 name: my-gen
@@ -274,10 +329,31 @@ compile:
 ";
         fs::write(custom.join("my-gen.yaml"), yaml).unwrap();
 
-        let defs = load(tmp.path(), "generators").unwrap();
+        let defs = load(t.path(), "custom").unwrap();
         assert!(defs[0].compile.is_some());
         assert_eq!(defs[0].compile.as_ref().unwrap().image, "build:latest");
     }
+
+    // ── load_strict ─────────────────────────────────────────────────────
+
+    #[test]
+    fn load_strict_missing_dir_errors() {
+        let t = tmp();
+        let err = load_strict(t.path(), "nope").unwrap_err();
+        assert!(err.to_string().contains("does not exist"), "{err}");
+    }
+
+    #[test]
+    fn load_strict_existing_dir_works() {
+        let t = tmp();
+        let custom = t.path().join("custom");
+        fs::create_dir(&custom).unwrap();
+        fs::write(custom.join("my-gen.yaml"), valid_yaml("my-gen", "server")).unwrap();
+
+        assert_eq!(load_strict(t.path(), "custom").unwrap().len(), 1);
+    }
+
+    // ── helpers ─────────────────────────────────────────────────────────
 
     #[test]
     fn server_and_client_name_filters() {
