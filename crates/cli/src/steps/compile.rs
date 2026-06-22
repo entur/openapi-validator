@@ -306,10 +306,14 @@ fn resolve_compile_tasks(
 
     let mut tasks = Vec::new();
     for name in names {
-        if let Some(def) = builtin_defs.iter().find(|d| d.name == name) {
+        if builtin_defs.iter().any(|d| d.name == name) {
+            let service = match scope {
+                "server" => format!("build-{name}"),
+                _ => format!("build-client-{name}"),
+            };
             tasks.push(CompileTask::Builtin(BuiltinTask {
                 scope: scope.to_string(),
-                service: format!("{}{}", def.compile_prefix, name),
+                service,
                 name,
             }));
         } else if let Some(cdef) = scope_custom.iter().find(|d| d.name == name) {

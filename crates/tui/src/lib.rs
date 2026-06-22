@@ -1,6 +1,6 @@
 pub mod config;
-pub mod generators;
 pub use oav_lib::custom;
+pub use oav_lib::generators;
 pub mod keys;
 pub mod pipeline;
 pub mod scaffold;

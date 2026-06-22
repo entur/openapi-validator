@@ -137,8 +137,7 @@ fn validate_def(def: &CustomGeneratorDef, path: &Path) -> Result<()> {
 fn check_collisions(defs: &[CustomGeneratorDef]) -> Result<()> {
     let mut seen = HashSet::new();
     for def in defs {
-        let builtins = generators::names_for_scope(&def.scope);
-        if builtins.contains(&def.name.as_str()) {
+        if generators::find_builtin(&def.name, &def.scope).is_some() {
             bail!(
                 "custom generator '{}' collides with built-in {} generator",
                 def.name,
