@@ -167,9 +167,9 @@ fn cmd_init(root: &Path, output: &Output, args: InitArgs) -> Result<()> {
     let mut cfg = config::load(root)?;
     util::ensure_oav_dir(root)?;
     if cfg.manage_gitignore {
-        util::add_gitignore_entries(root, &[".oav/"])?;
+        util::ensure_workspace_gitignore(root)?;
         if args.ignore_config {
-            util::add_gitignore_entries(root, &[".oavc"])?;
+            util::add_gitignore_entries(root, &[CONFIG_FILE], None)?;
         }
     }
     if let Some(d) = args.search_depth {
@@ -258,9 +258,9 @@ fn cmd_init_interactive(root: &Path, output: &Output, args: InitArgs) -> Result<
     let mut cfg = config::load(root)?;
     util::ensure_oav_dir(root)?;
     if cfg.manage_gitignore {
-        util::add_gitignore_entries(root, &[".oav/"])?;
+        util::ensure_workspace_gitignore(root)?;
         if args.ignore_config {
-            util::add_gitignore_entries(root, &[".oavc"])?;
+            util::add_gitignore_entries(root, &[CONFIG_FILE], None)?;
         }
     }
 
@@ -375,7 +375,7 @@ fn cmd_validate(root: &Path, output: &Output, args: ValidateArgs) -> Result<()> 
     let mut cfg = config::load(root)?;
     util::ensure_oav_dir(root)?;
     if cfg.manage_gitignore {
-        util::add_gitignore_entries(root, &[".oav/"])?;
+        util::ensure_workspace_gitignore(root)?;
     }
     util::extract_assets(root, &ASSETS)?;
 
@@ -668,7 +668,8 @@ fn cmd_config(root: &Path, output: &Output, command: Option<ConfigCommand>) -> R
             }
         }
         ConfigCommand::Ignore => {
-            util::ensure_gitignore(root, true)?;
+            util::ensure_workspace_gitignore(root)?;
+            util::add_gitignore_entries(root, &[CONFIG_FILE], None)?;
             let mut cfg = config::load(root)?;
             cfg.manage_gitignore = true;
             config::write(root, &cfg)?;
@@ -677,7 +678,7 @@ fn cmd_config(root: &Path, output: &Output, command: Option<ConfigCommand>) -> R
             );
         }
         ConfigCommand::Unignore => {
-            util::remove_gitignore_entries(root, &[".oavc"])?;
+            util::remove_gitignore_entries(root, &[CONFIG_FILE])?;
             let mut cfg = config::load(root)?;
             cfg.manage_gitignore = false;
             config::write(root, &cfg)?;
@@ -781,7 +782,7 @@ fn cmd_clean(root: &Path, output: &Output, nuke: bool, yes: bool) -> Result<()> 
         removed.push(".oavc");
     }
     if has_gitignore_entries {
-        util::remove_gitignore_entries(root, &[".oav/", ".oavc"])?;
+        util::remove_gitignore_entries(root, &[util::GITIGNORE_HEADER, ".oav/", CONFIG_FILE])?;
         // Clean up the .gitignore file itself if oav entries were the only content
         let gi = fs::read_to_string(&gitignore_path)
             .with_context(|| format!("Failed to read {}", gitignore_path.display()))?;

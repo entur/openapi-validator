@@ -4,7 +4,10 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{Read as _, Write};
 use std::path::{Path, PathBuf};
 
-pub const OAV_DIR: &str = ".oav";
+pub use oav_lib::scaffold::{
+    GITIGNORE_HEADER, OAV_DIR, add_gitignore_entries, ensure_workspace_gitignore,
+    remove_gitignore_entries,
+};
 
 /// Convert a path to a POSIX-style string for use in container paths.
 /// On Windows, backslashes are converted to forward slashes.
@@ -13,19 +16,22 @@ pub fn to_posix_path(path: &Path) -> String {
 }
 
 pub fn ensure_oav_dir(root: &Path) -> Result<()> {
-    fs::create_dir_all(root.join(OAV_DIR)).context("Failed to create .oav directory")?;
-    Ok(())
+    oav_lib::scaffold::ensure_dirs(root, &[OAV_DIR])
 }
 
 pub fn prepare_runtime_dirs(root: &Path) -> Result<()> {
-    let oav_dir = root.join(OAV_DIR);
-    fs::create_dir_all(oav_dir.join("reports").join("lint"))?;
-    fs::create_dir_all(oav_dir.join("reports").join("generate").join("server"))?;
-    fs::create_dir_all(oav_dir.join("reports").join("generate").join("client"))?;
-    fs::create_dir_all(oav_dir.join("reports").join("compile").join("server"))?;
-    fs::create_dir_all(oav_dir.join("reports").join("compile").join("client"))?;
-    fs::create_dir_all(oav_dir.join("generated"))?;
-    fs::write(oav_dir.join("status.tsv"), "")?;
+    oav_lib::scaffold::ensure_dirs(
+        root,
+        &[
+            ".oav/reports/lint",
+            ".oav/reports/generate/server",
+            ".oav/reports/generate/client",
+            ".oav/reports/compile/server",
+            ".oav/reports/compile/client",
+            ".oav/generated",
+        ],
+    )?;
+    fs::write(root.join(".oav/status.tsv"), "").context("Failed to create .oav/status.tsv")?;
     Ok(())
 }
 
@@ -80,60 +86,6 @@ fn set_script_permissions(path: &Path) -> Result<()> {
         fs::set_permissions(path, perm)
             .with_context(|| format!("Failed to set permissions on {}", path.display()))?;
     }
-    Ok(())
-}
-
-// Gitignore management
-
-pub fn ensure_gitignore(root: &Path, ignore_config: bool) -> Result<()> {
-    let mut entries = vec![".oav/"];
-    if ignore_config {
-        entries.push(".oavc");
-    }
-    add_gitignore_entries(root, &entries)
-}
-
-pub fn add_gitignore_entries(root: &Path, entries: &[&str]) -> Result<()> {
-    let path = root.join(".gitignore");
-    let mut content = if path.exists() {
-        fs::read_to_string(&path).context("Failed to read .gitignore")?
-    } else {
-        String::new()
-    };
-
-    let mut changed = false;
-    for entry in entries {
-        if !content.lines().any(|line| line.trim() == *entry) {
-            if !content.ends_with('\n') && !content.is_empty() {
-                content.push('\n');
-            }
-            content.push_str(entry);
-            content.push('\n');
-            changed = true;
-        }
-    }
-
-    if changed {
-        fs::write(&path, content).context("Failed to update .gitignore")?;
-    }
-    Ok(())
-}
-
-pub fn remove_gitignore_entries(root: &Path, entries: &[&str]) -> Result<()> {
-    let path = root.join(".gitignore");
-    if !path.exists() {
-        return Ok(());
-    }
-    let content = fs::read_to_string(&path).context("Failed to read .gitignore")?;
-    let kept: Vec<&str> = content
-        .lines()
-        .filter(|line| !entries.iter().any(|entry| line.trim() == *entry))
-        .collect();
-    let mut new_content = kept.join("\n");
-    if !new_content.is_empty() {
-        new_content.push('\n');
-    }
-    fs::write(&path, new_content).context("Failed to update .gitignore")?;
     Ok(())
 }
 
