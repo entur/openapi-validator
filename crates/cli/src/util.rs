@@ -1,8 +1,8 @@
 use anyhow::{Context, Result, bail};
 use include_dir::{Dir, DirEntry};
-use std::fs::{self, File, OpenOptions};
-use std::io::{Read as _, Write};
-use std::path::{Path, PathBuf};
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::Path;
 
 pub use oav_lib::scaffold::{
     GITIGNORE_HEADER, OAV_DIR, add_gitignore_entries, ensure_workspace_gitignore,
@@ -91,113 +91,15 @@ fn set_script_permissions(path: &Path) -> Result<()> {
 
 // Spec discovery
 
-pub fn normalize_spec_path(root: &Path, spec: &str) -> Result<PathBuf> {
-    if spec.trim().is_empty() {
-        bail!("Spec path cannot be blank");
-    }
-    let spec_path = PathBuf::from(spec);
-    let absolute = if spec_path.is_absolute() {
-        spec_path
-    } else {
-        root.join(&spec_path)
-    };
-    if !absolute.exists() {
-        bail!("Spec file not found: {}", absolute.display());
-    }
-    let relative = absolute
-        .strip_prefix(root)
-        .context("Spec path must be inside the repository")?;
-    Ok(relative.to_path_buf())
-}
+pub use oav_lib::spec::looks_like_openapi;
+pub use oav_lib::spec::normalize_spec_path;
 
 pub fn discover_spec(root: &Path, quiet: bool, max_depth: usize) -> Result<Option<String>> {
-    for name in ["openapi.yaml", "openapi.yml", "openapi.json"] {
-        let candidate = root.join(name);
-        if candidate.is_file() {
-            return Ok(Some(name.to_string()));
-        }
-    }
-
-    let mut matches = Vec::new();
-    let walker = walkdir::WalkDir::new(root)
-        .max_depth(max_depth)
-        .follow_links(false)
-        .into_iter()
-        .filter_entry(|entry| !should_skip_entry(entry));
-
-    for entry in walker.filter_map(Result::ok) {
-        if !entry.file_type().is_file() {
-            continue;
-        }
-        let path = entry.path();
-        if !is_spec_file(path) || !is_openapi_spec(path) {
-            continue;
-        }
-        if let Ok(rel) = path.strip_prefix(root) {
-            matches.push(rel.to_string_lossy().to_string());
-        }
-    }
-
+    let matches = oav_lib::spec::discover_spec(root, max_depth)?;
     if matches.is_empty() {
         return Ok(None);
     }
-
-    matches.sort();
     select_spec_from_candidates(matches, quiet)
-}
-
-fn is_spec_file(path: &Path) -> bool {
-    matches!(
-        path.extension().and_then(|ext| ext.to_str()).map(|ext| ext.to_lowercase()),
-        Some(ext) if ext == "yaml" || ext == "yml" || ext == "json"
-    )
-}
-
-fn is_json(path: &Path) -> bool {
-    matches!(
-        path.extension().and_then(|ext| ext.to_str()).map(|ext| ext.to_lowercase()),
-        Some(ext) if ext == "json"
-    )
-}
-
-/// Check whether content (as a string) looks like an OpenAPI spec.
-/// For JSON content, looks for `"openapi":` as a key. For YAML, looks for
-/// `openapi:`. Only inspects the first 512 characters.
-pub fn looks_like_openapi(content: &str, json: bool) -> bool {
-    let head: String = content.chars().take(512).collect();
-    if json {
-        let stripped: String = head.chars().filter(|c| !c.is_whitespace()).collect();
-        stripped.contains("\"openapi\":")
-    } else {
-        head.contains("openapi:")
-    }
-}
-
-/// Heuristic check for OpenAPI specs: reads only the first 512 bytes and
-/// scans for an `openapi` key. This avoids parsing potentially large
-/// files that happen to have a matching extension.
-fn is_openapi_spec(path: &Path) -> bool {
-    let mut file = match File::open(path) {
-        Ok(file) => file,
-        Err(_) => return false,
-    };
-    let mut buf = [0u8; 512];
-    let n = match file.read(&mut buf) {
-        Ok(n) => n,
-        Err(_) => return false,
-    };
-    let head = String::from_utf8_lossy(&buf[..n]);
-    looks_like_openapi(&head, is_json(path))
-}
-
-fn should_skip_entry(entry: &walkdir::DirEntry) -> bool {
-    if entry.depth() == 0 || !entry.file_type().is_dir() {
-        return false;
-    }
-    matches!(
-        entry.file_name().to_str().unwrap_or_default(),
-        ".git" | ".oav" | "target" | "node_modules" | ".idea" | ".vscode"
-    )
 }
 
 fn select_spec_from_candidates(candidates: Vec<String>, quiet: bool) -> Result<Option<String>> {
@@ -351,44 +253,4 @@ pub fn append_error(log_path: &Path, message: &str) -> Result<()> {
         .context("Failed to write error log")?;
     writeln!(file, "{message}")?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn looks_like_openapi_yaml_positive() {
-        assert!(looks_like_openapi(
-            "openapi: 3.0.3\ninfo:\n  title: Test",
-            false
-        ));
-    }
-
-    #[test]
-    fn looks_like_openapi_yaml_negative() {
-        assert!(!looks_like_openapi("name: not a spec\nversion: 1.0", false));
-    }
-
-    #[test]
-    fn looks_like_openapi_json_positive() {
-        assert!(looks_like_openapi(
-            r#"{"openapi": "3.0.3", "info": {}}"#,
-            true
-        ));
-    }
-
-    #[test]
-    fn looks_like_openapi_json_negative() {
-        assert!(!looks_like_openapi(r#"{"name": "not a spec"}"#, true));
-    }
-
-    #[test]
-    fn looks_like_openapi_json_value_not_key() {
-        // "openapi" as a value, not a key — should not match
-        assert!(!looks_like_openapi(
-            r#"{"type": "openapi", "name": "tool"}"#,
-            true
-        ));
-    }
 }
