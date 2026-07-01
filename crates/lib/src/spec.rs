@@ -5,6 +5,12 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use walkdir::WalkDir;
 
+mod parser;
+mod types;
+
+pub use parser::{normalize_to_pointer, parse_spec};
+pub use types::{ContextWindow, SourceSpan, SpecIndex};
+
 /// Resolve a spec path (from config or user input) to a path relative to the project root.
 pub fn normalize_spec_path(root: &Path, spec: &str) -> Result<PathBuf> {
     if spec.trim().is_empty() {

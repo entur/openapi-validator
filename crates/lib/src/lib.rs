@@ -1,7 +1,10 @@
 pub mod config;
 pub mod custom;
 pub mod docker;
+pub mod fix;
 pub mod generators;
+pub mod log_parser;
 pub mod pipeline;
 pub mod scaffold;
 pub mod spec;
+pub mod trace;
