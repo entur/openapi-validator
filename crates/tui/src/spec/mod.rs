@@ -1,6 +1,4 @@
-mod parser;
-mod types;
-
-pub use oav_lib::spec::{discover_spec, normalize_spec_path};
-pub use parser::{normalize_to_pointer, parse_spec};
-pub use types::{ContextWindow, SourceSpan, SpecIndex};
+pub use oav_lib::spec::{
+    ContextWindow, SourceSpan, SpecIndex, discover_spec, normalize_spec_path, normalize_to_pointer,
+    parse_spec,
+};

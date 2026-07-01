@@ -649,7 +649,7 @@ fn start_pipeline(app: &mut App) {
 
     app.snapshots.clear();
     app.browser.diff_state = DiffViewState::new();
-    let gen_pairs = pipeline::commands::build_generator_list(&cfg, &app.custom_defs);
+    let gen_pairs = pipeline::build_generator_list(&cfg, &app.custom_defs);
     for (generator, scope) in &gen_pairs {
         let key = format!("{scope}/{generator}");
         let gen_dir = cwd.join(".oav/generated").join(&key);
