@@ -1,25 +1,10 @@
-mod compile;
-mod generate;
-mod lint;
 mod report;
 
-pub use compile::run as compile;
-pub use generate::run as generate;
-pub use lint::run as lint;
-pub use report::{StatusEntry, load_status_entries, run as report};
-
-use std::path::PathBuf;
+pub use report::run as report;
 
 use anyhow::Result;
 
 use crate::output::Output;
-
-struct TaskResult {
-    name: String,
-    scope: String,
-    success: bool,
-    log_path: PathBuf,
-}
 
 pub fn run_step(
     output: &Output,

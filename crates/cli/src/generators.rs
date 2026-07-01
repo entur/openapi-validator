@@ -1,6 +1,4 @@
-pub use oav_lib::generators::{
-    CLIENT_GENERATORS, GeneratorDef, SERVER_GENERATORS, client_names, server_names,
-};
+pub use oav_lib::generators::{CLIENT_GENERATORS, SERVER_GENERATORS, client_names, server_names};
 
 pub fn all_server_names(custom: &[crate::custom::CustomGeneratorDef]) -> Vec<String> {
     let mut names: Vec<String> = SERVER_GENERATORS

@@ -1,7 +1,6 @@
 use anyhow::{Context, Result, bail};
 use include_dir::{Dir, DirEntry};
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs;
 use std::path::Path;
 
 pub use oav_lib::scaffold::{
@@ -201,50 +200,4 @@ fn collect_extra_files(
             }
         }
     }
-}
-
-// Logging utilities
-
-pub fn write_log_header(log_path: &Path, command_line: &str) -> Result<()> {
-    let mut file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(log_path)
-        .context("Failed to create log file")?;
-    writeln!(file, "{command_line}")?;
-    writeln!(file)?;
-    Ok(())
-}
-
-pub fn append_status(
-    root: &Path,
-    stage: &str,
-    scope: &str,
-    target: &str,
-    status: &str,
-    log_path: &Path,
-) -> Result<()> {
-    let status_path = root.join(OAV_DIR).join("status.tsv");
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(status_path)
-        .context("Failed to open status file")?;
-    writeln!(
-        file,
-        "{stage}\t{scope}\t{target}\t{status}\t{}",
-        log_path.display()
-    )?;
-    Ok(())
-}
-
-pub fn append_error(log_path: &Path, message: &str) -> Result<()> {
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_path)
-        .context("Failed to write error log")?;
-    writeln!(file, "{message}")?;
-    Ok(())
 }

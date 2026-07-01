@@ -2,7 +2,6 @@ mod agent;
 mod cli;
 mod completions;
 mod config;
-mod docker;
 mod fetch;
 mod generators;
 mod json_report;
@@ -11,6 +10,8 @@ mod steps;
 mod util;
 
 use oav_lib::custom;
+use oav_lib::docker::CancelToken;
+use oav_lib::pipeline::{self, Phase, PipelineEvent, PipelineInput, ValidateReport};
 
 pub const EXIT_SUCCESS: i32 = 0;
 pub const EXIT_VALIDATION_FAILURE: i32 = 1;
@@ -469,65 +470,37 @@ fn cmd_validate(root: &Path, output: &Output, args: ValidateArgs) -> Result<()> 
     cfg.spec = Some(spec_path.to_string_lossy().to_string());
 
     if cfg.lint || cfg.generate || cfg.compile {
-        docker::ensure_available()?;
+        oav_lib::docker::ensure_available()?;
     }
 
     config::validate(&cfg, &custom_defs)?;
     util::prepare_runtime_dirs(root)?;
     config::write(root, &cfg)?;
 
-    let mut failures = 0;
-
-    if cfg.lint && cfg.linter != cli::Linter::None {
-        let success = steps::run_step(output, "Lint", true, true, || {
-            steps::lint(root, &spec_path, &cfg, output)
-        })?;
-        if !success {
-            failures += 1;
-        }
+    if cfg.compile && !cfg.generate {
+        output.println("Skipping compile (generate disabled)");
     }
 
-    if cfg.generate {
-        output.phase_header("Generate");
-        let success = steps::run_step(output, "Generate", false, false, || {
-            steps::generate(root, &spec_path, &cfg, output, &custom_defs)
-        })?;
-        if !success {
-            failures += 1;
-        }
-    }
-
-    if cfg.compile {
-        if cfg.generate {
-            output.phase_header("Compile");
-            let success = steps::run_step(output, "Compile", false, false, || {
-                steps::compile(root, &cfg, output, &custom_defs)
-            })?;
-            if !success {
-                failures += 1;
-            }
-        } else {
-            output.println("Skipping compile (generate disabled)");
-        }
-    }
+    let input = PipelineInput {
+        config: cfg.clone(),
+        custom_defs,
+        spec_path: root.join(&spec_path),
+        work_dir: root.to_path_buf(),
+    };
+    let report = run_shared_pipeline(output, input)?;
+    write_status_from_report(root, &report)?;
 
     let _ = steps::run_step(output, "Report", true, true, || steps::report(root, output));
 
-    // Summary
-    let status_path = root.join(OAV_DIR).join("status.tsv");
-    let entries = steps::load_status_entries(&status_path).unwrap_or_default();
-    let passed = entries.iter().filter(|e| e.status == "ok").count();
-    let failed = entries.iter().filter(|e| e.status == "fail").count();
+    let passed = report.summary.passed;
+    let failed = report.summary.failed;
 
     if output.json {
-        let spec_display = cfg.spec.as_deref().unwrap_or("");
-        let report =
-            json_report::build_validate_report(root, spec_display, cfg.mode.as_str(), &entries);
         println!(
             "{}",
             serde_json::to_string_pretty(&report).expect("failed to serialize report")
         );
-        if failures > 0 {
+        if failed > 0 {
             std::process::exit(EXIT_VALIDATION_FAILURE);
         }
         return Ok(());
@@ -546,12 +519,111 @@ fn cmd_validate(root: &Path, output: &Output, args: ValidateArgs) -> Result<()> 
             .to_string(),
     );
 
-    if failures > 0 {
+    if failed > 0 {
         output.print_error("Validation failed. See dashboard for details.");
         std::process::exit(EXIT_VALIDATION_FAILURE);
     }
 
     Ok(())
+}
+
+fn run_shared_pipeline(output: &Output, input: PipelineInput) -> Result<ValidateReport> {
+    let rx = pipeline::run_pipeline(input, CancelToken::new());
+    let mut seen_generate = false;
+    let mut seen_compile = false;
+
+    for event in rx {
+        match event {
+            PipelineEvent::PhaseStarted(phase) => match &phase {
+                Phase::Lint => output.substep_start("Lint"),
+                Phase::Generate { generator, scope } => {
+                    if !seen_generate {
+                        output.phase_header("Generate");
+                        seen_generate = true;
+                    }
+                    output.substep_start(&format!("Generate {scope} {generator}"));
+                }
+                Phase::Compile { generator, scope } => {
+                    if !seen_compile {
+                        output.phase_header("Compile");
+                        seen_compile = true;
+                    }
+                    output.substep_start(&format!("Compile {scope} {generator}"));
+                }
+            },
+            PipelineEvent::Log { line, .. } => {
+                if output.verbose && !output.json && !output.quiet {
+                    println!("{line}");
+                }
+            }
+            PipelineEvent::PhaseFinished { phase, success } => {
+                let label = phase_label(&phase);
+                output.substep_finish(&label, success);
+            }
+            PipelineEvent::LintCompleted(_) => {}
+            PipelineEvent::Completed(report) => return Ok(report),
+            PipelineEvent::Aborted(message) => bail!(message),
+        }
+    }
+
+    bail!("validation pipeline ended without a report")
+}
+
+fn phase_label(phase: &Phase) -> String {
+    match phase {
+        Phase::Lint => "Lint".to_string(),
+        Phase::Generate { generator, scope } => format!("Generate {scope} {generator}"),
+        Phase::Compile { generator, scope } => format!("Compile {scope} {generator}"),
+    }
+}
+
+fn write_status_from_report(root: &Path, report: &ValidateReport) -> Result<()> {
+    let mut lines = Vec::new();
+    if let Some(lint) = &report.phases.lint {
+        lines.push(format!(
+            "lint\tspec\t{}\t{}\t{}",
+            lint.linter,
+            status_to_tsv(&lint.status),
+            format!("reports/lint/{}.log", lint.linter)
+        ));
+    }
+    if let Some(generate) = &report.phases.generate {
+        for step in generate {
+            lines.push(format!(
+                "generate\t{}\t{}\t{}\t{}",
+                step.scope,
+                step.generator,
+                status_to_tsv(&step.status),
+                format!("reports/generate/{}/{}.log", step.scope, step.generator)
+            ));
+        }
+    }
+    if let Some(compile) = &report.phases.compile {
+        for step in compile {
+            lines.push(format!(
+                "compile\t{}\t{}\t{}\t{}",
+                step.scope,
+                step.generator,
+                status_to_tsv(&step.status),
+                format!("reports/compile/{}/{}.log", step.scope, step.generator)
+            ));
+        }
+    }
+
+    let mut content = lines.join("\n");
+    if !content.is_empty() {
+        content.push('\n');
+    }
+    fs::write(root.join(OAV_DIR).join("status.tsv"), content)
+        .context("Failed to write .oav/status.tsv")?;
+    Ok(())
+}
+
+fn status_to_tsv(status: &str) -> &str {
+    match status {
+        "pass" => "ok",
+        other => other,
+    }
 }
 
 fn cmd_config(root: &Path, output: &Output, command: Option<ConfigCommand>) -> Result<()> {
