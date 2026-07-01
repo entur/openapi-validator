@@ -1118,6 +1118,7 @@ dependencies = [
  "clap",
  "libc",
  "serde",
+ "shell-words",
  "tempfile",
  "walkdir",
  "yaml_serde",

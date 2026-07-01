@@ -1,7 +1,6 @@
 use anyhow::{Context, Result, bail};
 use std::fs;
 use std::path::Path;
-use std::time::Duration;
 
 use crate::cli::Mode;
 use crate::config::Config;
@@ -24,7 +23,6 @@ enum CompileTask {
 
 struct BuiltinTask {
     scope: String,
-    service: String,
     name: String,
 }
 
@@ -36,7 +34,6 @@ pub fn run(
 ) -> Result<bool> {
     let reports_root = root.join(OAV_DIR).join("reports").join("compile");
     fs::create_dir_all(&reports_root).context("Failed to create compile reports directory")?;
-    let timeout = Duration::from_secs(config.docker_timeout);
 
     let mut tasks = Vec::new();
 
@@ -60,9 +57,8 @@ pub fn run(
 
     let ctx = CompileContext {
         root,
-        reports_root: &reports_root,
+        config,
         output,
-        timeout,
     };
 
     let jobs = config.jobs.resolve();
@@ -75,9 +71,8 @@ pub fn run(
 
 struct CompileContext<'a> {
     root: &'a Path,
-    reports_root: &'a Path,
+    config: &'a Config,
     output: &'a Output,
-    timeout: Duration,
 }
 
 fn compile_task_name(task: &CompileTask) -> &str {
@@ -108,41 +103,24 @@ fn run_single_builtin_compile(
     task: &BuiltinTask,
     quiet: bool,
 ) -> Result<TaskResult> {
-    let report_dir = ctx.reports_root.join(&task.scope);
-    fs::create_dir_all(&report_dir)?;
-    let log_path = report_dir.join(format!("{}.log", task.service));
-    let project_dir = ctx.root.join(OAV_DIR);
-    let compose_path = project_dir.join("docker-compose.yaml");
-    let command_line = format!(
-        "$ docker compose -f {compose} --project-directory {project} run --rm {service}",
-        compose = compose_path.display(),
-        project = project_dir.display(),
-        service = task.service
-    );
-    write_log_header(&log_path, &command_line)?;
-
-    let args = vec![
-        "compose".into(),
-        "-f".into(),
-        compose_path.display().to_string(),
-        "--project-directory".into(),
-        project_dir.display().to_string(),
-        "run".into(),
-        "--rm".into(),
-        task.service.clone(),
-    ];
+    let step =
+        oav_lib::pipeline::builtin_compile_command(ctx.config, ctx.root, &task.name, &task.scope)?;
+    if let Some(parent) = step.log_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    write_log_header(&step.log_path, &step.command_line)?;
 
     let success = if quiet {
-        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(step.cmd.args, &step.log_path, step.cmd.timeout)?
     } else {
-        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(step.cmd.args, &step.log_path, ctx.output, step.cmd.timeout)?
     };
 
     Ok(TaskResult {
         name: task.name.clone(),
         scope: task.scope.clone(),
         success,
-        log_path,
+        log_path: step.log_path,
     })
 }
 
@@ -153,45 +131,32 @@ fn run_single_custom_compile(
     block: &custom::CompileBlock,
     quiet: bool,
 ) -> Result<TaskResult> {
-    let report_dir = ctx.reports_root.join(scope);
-    fs::create_dir_all(&report_dir)?;
-    let log_path = report_dir.join(format!("{name}.log"));
-    let workdir = format!("/work/.oav/generated/{scope}/{name}");
-
-    let cmd_args = shell_words::split(&block.command)
-        .with_context(|| format!("Failed to parse compile command for '{name}'"))?;
-    let command_line = format!(
-        "$ docker run --rm {user} -v {root}:/work -w {workdir} {image} {cmd}",
-        user = docker::user_flag(),
-        root = ctx.root.display(),
-        image = block.image,
-        cmd = block.command,
-    )
-    .replace("  ", " ");
-    write_log_header(&log_path, &command_line)?;
-
-    let mut args = vec!["run".into(), "--rm".into()];
-    args.extend(docker::user_args());
-    args.extend([
-        "-v".into(),
-        format!("{}:/work", ctx.root.display()),
-        "-w".into(),
-        workdir.clone(),
-        block.image.clone(),
-    ]);
-    args.extend(cmd_args);
+    let def = CustomGeneratorDef {
+        name: name.to_string(),
+        scope: scope.to_string(),
+        generate: custom::GenerateBlock {
+            image: String::new(),
+            command: String::new(),
+        },
+        compile: Some(block.clone()),
+    };
+    let step = oav_lib::pipeline::custom_compile_command(ctx.config, ctx.root, &def, block)?;
+    if let Some(parent) = step.log_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    write_log_header(&step.log_path, &step.command_line)?;
 
     let success = if quiet {
-        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(step.cmd.args, &step.log_path, step.cmd.timeout)?
     } else {
-        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(step.cmd.args, &step.log_path, ctx.output, step.cmd.timeout)?
     };
 
     Ok(TaskResult {
         name: name.to_string(),
         scope: scope.to_string(),
         success,
-        log_path,
+        log_path: step.log_path,
     })
 }
 
@@ -307,13 +272,8 @@ fn resolve_compile_tasks(
     let mut tasks = Vec::new();
     for name in names {
         if builtin_defs.iter().any(|d| d.name == name) {
-            let service = match scope {
-                "server" => format!("build-{name}"),
-                _ => format!("build-client-{name}"),
-            };
             tasks.push(CompileTask::Builtin(BuiltinTask {
                 scope: scope.to_string(),
-                service,
                 name,
             }));
         } else if let Some(cdef) = scope_custom.iter().find(|d| d.name == name) {

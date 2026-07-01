@@ -6,8 +6,8 @@ use crate::docker::{self, CancelToken, OutputLine};
 use crate::custom::CustomGeneratorDef;
 
 use super::commands::{
-    DockerStep, build_generator_list, compile_command, custom_compile_command,
-    custom_generate_command, generator_command, redocly_command, resolve_config_path,
+    DockerStep, build_generator_list, builtin_compile_command, builtin_generate_command,
+    custom_compile_command, custom_generate_command, redocly_command, resolve_config_path,
     spectral_command, write_builtin_configs,
 };
 use super::types::{
@@ -44,9 +44,16 @@ fn run_inner(input: PipelineInput, cancel: CancelToken, tx: Sender<PipelineEvent
         let _ = tx.send(PipelineEvent::PhaseStarted(phase.clone()));
 
         let step = match cfg.linter {
-            Linter::Spectral => spectral_command(cfg, &input.spec_path, &input.work_dir),
-            Linter::Redocly => redocly_command(cfg, &input.spec_path, &input.work_dir),
+            Linter::Spectral => spectral_command(cfg, &input.work_dir, &input.spec_path),
+            Linter::Redocly => redocly_command(cfg, &input.work_dir, &input.spec_path),
             Linter::None => unreachable!(),
+        };
+        let step = match step {
+            Ok(step) => step,
+            Err(e) => {
+                let _ = tx.send(PipelineEvent::Aborted(e.to_string()));
+                return;
+            }
         };
 
         let outcome = run_container(step, &cancel, &phase, &tx);
@@ -212,13 +219,19 @@ fn run_steps_parallel(
                 let step = match kind {
                     StepKind::Generate => {
                         if let Some(def) = &custom_def {
-                            custom_generate_command(cfg, &input.spec_path, &input.work_dir, def)
+                            custom_generate_command(cfg, &input.work_dir, &input.spec_path, def)
                         } else {
-                            let config_path = resolve_config_path(cfg, gen_name, scope);
-                            generator_command(
+                            let config_path =
+                                match resolve_config_path(cfg, &input.work_dir, gen_name, scope) {
+                                    Ok(path) => path,
+                                    Err(e) => {
+                                        return error_step_result(tx, phase, gen_name, scope, e);
+                                    }
+                                };
+                            builtin_generate_command(
                                 cfg,
-                                &input.spec_path,
                                 &input.work_dir,
+                                &input.spec_path,
                                 gen_name,
                                 scope,
                                 config_path.as_deref(),
@@ -251,9 +264,13 @@ fn run_steps_parallel(
                                 });
                             }
                         } else {
-                            compile_command(cfg, &input.work_dir, gen_name, scope)
+                            builtin_compile_command(cfg, &input.work_dir, gen_name, scope)
                         }
                     }
+                };
+                let step = match step {
+                    Ok(step) => step,
+                    Err(e) => return error_step_result(tx, phase, gen_name, scope, e),
                 };
 
                 let cancel = cancel.clone();
@@ -300,6 +317,35 @@ fn find_custom_def(
         .cloned()
 }
 
+fn error_step_result(
+    tx: &Sender<PipelineEvent>,
+    phase: Phase,
+    gen_name: &str,
+    scope: &str,
+    error: anyhow::Error,
+) -> std::thread::JoinHandle<StepResult> {
+    let tx = tx.clone();
+    let gen_name = gen_name.to_string();
+    let scope = scope.to_string();
+    std::thread::spawn(move || {
+        let _ = tx.send(PipelineEvent::PhaseStarted(phase.clone()));
+        let _ = tx.send(PipelineEvent::Log {
+            phase: phase.clone(),
+            line: error.to_string(),
+        });
+        let _ = tx.send(PipelineEvent::PhaseFinished {
+            phase,
+            success: false,
+        });
+        StepResult {
+            generator: gen_name,
+            scope,
+            status: "fail".to_string(),
+            log: error.to_string(),
+        }
+    })
+}
+
 struct ContainerOutcome {
     success: bool,
     log: String,
@@ -314,7 +360,7 @@ fn run_container(
     phase: &Phase,
     tx: &Sender<PipelineEvent>,
 ) -> ContainerOutcome {
-    let DockerStep { cmd, log_path } = step;
+    let DockerStep { cmd, log_path, .. } = step;
     let container_rx = match docker::spawn(cmd, cancel.clone()) {
         Ok(rx) => rx,
         Err(e) => {

@@ -9,12 +9,6 @@ pub use oav_lib::scaffold::{
     remove_gitignore_entries,
 };
 
-/// Convert a path to a POSIX-style string for use in container paths.
-/// On Windows, backslashes are converted to forward slashes.
-pub fn to_posix_path(path: &Path) -> String {
-    path.to_string_lossy().replace('\\', "/")
-}
-
 pub fn ensure_oav_dir(root: &Path) -> Result<()> {
     oav_lib::scaffold::ensure_dirs(root, &[OAV_DIR])
 }

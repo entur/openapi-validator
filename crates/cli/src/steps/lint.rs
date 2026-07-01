@@ -1,112 +1,49 @@
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
-use std::time::Duration;
 
 use crate::cli::Linter;
 use crate::config::Config;
 use crate::docker;
 use crate::output::Output;
-use crate::util::{OAV_DIR, append_status, to_posix_path, write_log_header};
+use crate::util::{OAV_DIR, append_status, write_log_header};
 
 pub fn run(root: &Path, spec_path: &Path, config: &Config, output: &Output) -> Result<bool> {
-    let timeout = Duration::from_secs(config.docker_timeout);
     match config.linter {
-        Linter::Spectral => run_spectral(root, spec_path, config, output, timeout),
-        Linter::Redocly => run_redocly(root, spec_path, config, output, timeout),
+        Linter::Spectral => run_linter(
+            root,
+            output,
+            oav_lib::pipeline::spectral_command(config, root, spec_path)?,
+            "spectral",
+        ),
+        Linter::Redocly => run_linter(
+            root,
+            output,
+            oav_lib::pipeline::redocly_command(config, root, spec_path)?,
+            "redocly",
+        ),
         Linter::None => Ok(true),
     }
 }
 
-fn run_spectral(
+fn run_linter(
     root: &Path,
-    spec_path: &Path,
-    config: &Config,
     output: &Output,
-    timeout: Duration,
+    step: oav_lib::pipeline::DockerStep,
+    linter: &str,
 ) -> Result<bool> {
     let reports_dir = root.join(OAV_DIR).join("reports").join("lint");
     fs::create_dir_all(&reports_dir).context("Failed to create lint reports directory")?;
-    let log_path = reports_dir.join("spectral.log");
-
-    let workspace = root.to_string_lossy().to_string();
-    let spec = format!("/work/{}", to_posix_path(spec_path));
-    let image = &config.spectral_image;
-    let ruleset = &config.spectral_ruleset;
-    let fail_severity = &config.spectral_fail_severity;
-
-    let command_line = format!(
-        "$ docker run --rm -v {workspace}:/work {image} lint {spec} --ruleset {ruleset} --fail-severity {fail_severity}"
-    );
-    write_log_header(&log_path, &command_line)?;
-
-    let args = vec![
-        "run".into(),
-        "--rm".into(),
-        "-v".into(),
-        format!("{workspace}:/work"),
-        image.into(),
-        "lint".into(),
-        spec.clone(),
-        "--ruleset".into(),
-        ruleset.into(),
-        "--fail-severity".into(),
-        fail_severity.into(),
-    ];
-
-    let success = docker::run_with_logging(args, &log_path, output, timeout)?;
+    write_log_header(&step.log_path, &step.command_line)?;
+    let success =
+        docker::run_with_logging(step.cmd.args, &step.log_path, output, step.cmd.timeout)?;
     append_status(
         root,
         "lint",
         "spec",
-        "spectral",
+        linter,
         if success { "ok" } else { "fail" },
-        &log_path,
-    )?;
-    Ok(success)
-}
-
-fn run_redocly(
-    root: &Path,
-    spec_path: &Path,
-    config: &Config,
-    output: &Output,
-    timeout: Duration,
-) -> Result<bool> {
-    let reports_dir = root.join(OAV_DIR).join("reports").join("lint");
-    fs::create_dir_all(&reports_dir).context("Failed to create lint reports directory")?;
-    let log_path = reports_dir.join("redocly.log");
-
-    let workspace = root.to_string_lossy().to_string();
-    let container_root = format!("/work/{OAV_DIR}");
-    let spec = format!("/work/{}", to_posix_path(spec_path));
-    let redocly_image = &config.redocly_image;
-
-    let command_line = format!(
-        "$ docker run --rm -v {workspace}:/work -w {container_root} {redocly_image} lint {spec}"
-    );
-    write_log_header(&log_path, &command_line)?;
-
-    let args = vec![
-        "run".into(),
-        "--rm".into(),
-        "-v".into(),
-        format!("{workspace}:/work"),
-        "-w".into(),
-        container_root,
-        redocly_image.into(),
-        "lint".into(),
-        spec,
-    ];
-
-    let success = docker::run_with_logging(args, &log_path, output, timeout)?;
-    append_status(
-        root,
-        "lint",
-        "spec",
-        "redocly",
-        if success { "ok" } else { "fail" },
-        &log_path,
+        &step.log_path,
     )?;
     Ok(success)
 }

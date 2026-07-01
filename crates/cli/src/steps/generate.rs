@@ -2,14 +2,13 @@ use anyhow::{Context, Result, bail};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use crate::cli::Mode;
 use crate::config::Config;
 use crate::custom::CustomGeneratorDef;
 use crate::docker;
 use crate::output::Output;
-use crate::util::{OAV_DIR, append_error, append_status, to_posix_path, write_log_header};
+use crate::util::{OAV_DIR, append_error, append_status, write_log_header};
 
 use super::TaskResult;
 
@@ -21,7 +20,7 @@ enum GenerateTask {
 struct ScopeContext<'a> {
     root: &'a Path,
     spec_path: &'a Path,
-    generator_image: &'a str,
+    config: &'a Config,
     scope: &'a str,
     config_dir: &'a Path,
     requested: &'a [String],
@@ -29,7 +28,6 @@ struct ScopeContext<'a> {
     custom_defs: &'a [CustomGeneratorDef],
     reports_root: &'a Path,
     output: &'a Output,
-    timeout: Duration,
     jobs: usize,
 }
 
@@ -43,7 +41,6 @@ pub fn run(
     let reports_root = root.join(OAV_DIR).join("reports").join("generate");
     let server_dir = root.join(OAV_DIR).join("generators").join("server");
     let client_dir = root.join(OAV_DIR).join("generators").join("client");
-    let timeout = Duration::from_secs(config.docker_timeout);
 
     let mut failures = 0;
 
@@ -51,7 +48,7 @@ pub fn run(
         && !run_for_scope(&ScopeContext {
             root,
             spec_path,
-            generator_image: &config.generator_image,
+            config,
             scope: "server",
             config_dir: &server_dir,
             requested: &config.server_generators,
@@ -59,7 +56,6 @@ pub fn run(
             custom_defs: custom,
             reports_root: &reports_root,
             output,
-            timeout,
             jobs: config.jobs.resolve(),
         })?
     {
@@ -70,7 +66,7 @@ pub fn run(
         && !run_for_scope(&ScopeContext {
             root,
             spec_path,
-            generator_image: &config.generator_image,
+            config,
             scope: "client",
             config_dir: &client_dir,
             requested: &config.client_generators,
@@ -78,7 +74,6 @@ pub fn run(
             custom_defs: custom,
             reports_root: &reports_root,
             output,
-            timeout,
             jobs: config.jobs.resolve(),
         })?
     {
@@ -94,52 +89,27 @@ fn run_single_generator(
     config_path: &Path,
     quiet: bool,
 ) -> Result<TaskResult> {
-    let report_dir = ctx.reports_root.join(ctx.scope);
-    let log_path = report_dir.join(format!("{name}.log"));
-    let config_rel = config_path
-        .strip_prefix(ctx.root)
-        .context("Generator config path is outside repository")?;
-    let container_config = format!("/work/{}", to_posix_path(config_rel));
-    let container_spec = format!("/work/{}", to_posix_path(ctx.spec_path));
-
-    let command_line = format!(
-        "$ docker run --rm {user} -v {root}:/work -w /work/{oav} {image} generate -i {spec} -c {config}",
-        user = docker::user_flag(),
-        root = ctx.root.display(),
-        oav = OAV_DIR,
-        image = ctx.generator_image,
-        spec = container_spec,
-        config = container_config
-    )
-    .replace("  ", " ");
-    write_log_header(&log_path, &command_line)?;
-
-    let mut args = vec!["run".into(), "--rm".into()];
-    args.extend(docker::user_args());
-    args.extend([
-        "-v".into(),
-        format!("{}:/work", ctx.root.display()),
-        "-w".into(),
-        format!("/work/{OAV_DIR}"),
-        ctx.generator_image.to_string(),
-        "generate".into(),
-        "-i".into(),
-        container_spec,
-        "-c".into(),
-        container_config,
-    ]);
+    let step = oav_lib::pipeline::builtin_generate_from_config_command(
+        ctx.config,
+        ctx.root,
+        ctx.spec_path,
+        name,
+        ctx.scope,
+        config_path,
+    )?;
+    write_log_header(&step.log_path, &step.command_line)?;
 
     let success = if quiet {
-        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(step.cmd.args, &step.log_path, step.cmd.timeout)?
     } else {
-        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(step.cmd.args, &step.log_path, ctx.output, step.cmd.timeout)?
     };
 
     Ok(TaskResult {
         name: name.to_string(),
         scope: ctx.scope.to_string(),
         success,
-        log_path,
+        log_path: step.log_path,
     })
 }
 
@@ -248,43 +218,21 @@ fn run_custom_generator(
     def: &CustomGeneratorDef,
     quiet: bool,
 ) -> Result<TaskResult> {
-    let report_dir = ctx.reports_root.join(ctx.scope);
-    let log_path = report_dir.join(format!("{}.log", def.name));
-    let container_spec = format!("/work/{}", to_posix_path(ctx.spec_path));
-    let resolved_command = def.generate.command.replace("{spec}", &container_spec);
-
-    let cmd_args = shell_words::split(&resolved_command)
-        .with_context(|| format!("Failed to parse generate command for '{}'", def.name))?;
-    let command_line = format!(
-        "$ docker run --rm {user} -v {root}:/work {image} {cmd}",
-        user = docker::user_flag(),
-        root = ctx.root.display(),
-        image = def.generate.image,
-        cmd = resolved_command,
-    )
-    .replace("  ", " ");
-    write_log_header(&log_path, &command_line)?;
-
-    let mut args = vec!["run".into(), "--rm".into()];
-    args.extend(docker::user_args());
-    args.extend([
-        "-v".into(),
-        format!("{}:/work", ctx.root.display()),
-        def.generate.image.clone(),
-    ]);
-    args.extend(cmd_args);
+    let step =
+        oav_lib::pipeline::custom_generate_command(ctx.config, ctx.root, ctx.spec_path, def)?;
+    write_log_header(&step.log_path, &step.command_line)?;
 
     let success = if quiet {
-        docker::run_with_logging_quiet(args, &log_path, ctx.timeout)?
+        docker::run_with_logging_quiet(step.cmd.args, &step.log_path, step.cmd.timeout)?
     } else {
-        docker::run_with_logging(args, &log_path, ctx.output, ctx.timeout)?
+        docker::run_with_logging(step.cmd.args, &step.log_path, ctx.output, step.cmd.timeout)?
     };
 
     Ok(TaskResult {
         name: def.name.clone(),
         scope: ctx.scope.to_string(),
         success,
-        log_path,
+        log_path: step.log_path,
     })
 }
 
