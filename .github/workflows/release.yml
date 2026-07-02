@@ -14,3 +14,134 @@ jobs:
       issues: write
     with:
       release_type: manifest
+
+  # release-please creates tags via the GitHub API, which (per GitHub's
+  # anti-recursion rule) would NOT trigger a separate tag-push-triggered
+  # workflow. So instead of a second workflow listening for tag pushes, we
+  # discover what it just tagged as a later job in this same run.
+  discover-tags:
+    needs: release-please
+    if: needs.release-please.outputs.releases_created == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      tags: ${{ steps.find.outputs.tags }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - id: find
+        shell: bash
+        run: |
+          tags="$(git tag --points-at HEAD | grep -E '^(cli|tui)-v' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+          echo "Found tags: ${tags}"
+          echo "tags=${tags}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: discover-tags
+    if: needs.discover-tags.result == 'success' && needs.discover-tags.outputs.tags != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJson(needs.discover-tags.outputs.tags) }}
+        target:
+          - { triple: aarch64-apple-darwin, os: macos-14 }
+          - { triple: x86_64-apple-darwin, os: macos-14 }
+          - { triple: x86_64-unknown-linux-gnu, os: ubuntu-24.04 }
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - id: parse
+        shell: bash
+        run: |
+          tag="${{ matrix.tag }}"
+          case "$tag" in
+            cli-v*) crate=cli; binary=oav; version="${tag#cli-v}" ;;
+            tui-v*) crate=tui; binary=lazyoav; version="${tag#tui-v}" ;;
+            *) echo "::error::unrecognized tag: $tag"; exit 1 ;;
+          esac
+          echo "crate=${crate}" >> "$GITHUB_OUTPUT"
+          echo "binary=${binary}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+      - uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1.16.1
+        with:
+          target: ${{ matrix.target.triple }}
+          cache: false
+      - name: Build
+        run: cargo build --release --locked -p oav-${{ steps.parse.outputs.crate }} --target ${{ matrix.target.triple }}
+      - name: Package
+        shell: bash
+        run: |
+          bin="${{ steps.parse.outputs.binary }}"
+          version="${{ steps.parse.outputs.version }}"
+          triple="${{ matrix.target.triple }}"
+          asset="${bin}-${version}-${triple}.tar.gz"
+
+          mkdir -p dist
+          cp "target/${triple}/release/${bin}" "dist/${bin}"
+          tar -C dist -czf "${asset}" "${bin}"
+          shasum -a 256 "${asset}" > "${asset}.sha256"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: assets-${{ matrix.tag }}-${{ matrix.target.triple }}
+          path: |
+            *.tar.gz
+            *.tar.gz.sha256
+          retention-days: 1
+
+  publish:
+    needs: [discover-tags, build]
+    if: needs.discover-tags.result == 'success' && needs.discover-tags.outputs.tags != '[]'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          pattern: assets-*
+          merge-multiple: true
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          for tag in $(echo '${{ needs.discover-tags.outputs.tags }}' | jq -r '.[]'); do
+            case "$tag" in
+              cli-v*) binary=oav ;;
+              tui-v*) binary=lazyoav ;;
+            esac
+            gh release upload "$tag" dist/"${binary}"-*.tar.gz dist/"${binary}"-*.tar.gz.sha256 \
+              --repo "${{ github.repository }}" --clobber
+          done
+      - name: Update Homebrew formulas
+        shell: bash
+        run: |
+          for tag in $(echo '${{ needs.discover-tags.outputs.tags }}' | jq -r '.[]'); do
+            version="${tag#*-v}"
+            case "$tag" in
+              cli-v*) formula=Formula/oav.rb; prefix=oav ;;
+              tui-v*) formula=Formula/lazyoav.rb; prefix=lazyoav ;;
+            esac
+            .github/scripts/update-formula.sh "$formula" "$version" dist "$prefix"
+          done
+      # Branch protection on main requires a reviewed PR (no bot bypass is
+      # configured), so this can't push directly like the other steps here.
+      - name: Open PR with updated formulas
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          add-paths: Formula/
+          commit-message: "chore: update homebrew formula checksums"
+          title: "chore: update homebrew formula checksums"
+          body: "Automated update after ${{ needs.discover-tags.outputs.tags }} published."
+          branch: update-homebrew-formulas
+          delete-branch: true
