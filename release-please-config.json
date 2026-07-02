@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "rust",
   "bump-minor-pre-major": true,
-  "bootstrap-sha": "af5a70a3db8c35b91be3b7d40156ed2acb4342fb",
+  "bootstrap-sha": "a31edc079d0f794c49db5c06087664de2bec3ae6",
   "plugins": ["cargo-workspace"],
   "packages": {
     "crates/lib": {
@@ -13,7 +13,8 @@
       "component": "cli"
     },
     "crates/tui": {
-      "component": "tui"
+      "component": "tui",
+      "release-as": "0.1.0"
     }
   }
 }
