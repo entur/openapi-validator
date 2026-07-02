@@ -25,14 +25,16 @@ runs:
       run: |
         version="${{ inputs.version }}"
         if [[ "$version" == "latest" ]]; then
+          # This repo hosts both oav and lazyoav releases, so /releases/latest
+          # could return either one. Find the newest release tagged for cli instead.
           json="$(curl -fsSL -H "Authorization: token ${{ inputs.token }}" \
-            "https://api.github.com/repos/entur/openapi-validator-cli/releases/latest")"
-          tag="$(printf '%s' "$json" | awk -F\" '/"tag_name":/ {print $4; exit}')"
+            "https://api.github.com/repos/entur/openapi-validator/releases?per_page=30")"
+          tag="$(printf '%s' "$json" | awk -F\" '/"tag_name":/ { if ($4 ~ /^cli-v/) { print $4; exit } }')"
           if [[ -z "$tag" ]]; then
-            echo "::error::Unable to determine latest release tag"
+            echo "::error::Unable to determine latest release tag for cli"
             exit 1
           fi
-          version="${tag#v}"
+          version="${tag#cli-v}"
         fi
 
         os="$(uname -s)"

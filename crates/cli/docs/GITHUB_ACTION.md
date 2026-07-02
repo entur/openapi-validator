@@ -4,10 +4,12 @@ Use `oav` directly in GitHub Actions workflows. The validate action requires Doc
 
 ## Basic usage
 
-```yaml
-- uses: entur/openapi-validator-cli/action/setup@v0
+Pin to a specific `cli-vX.Y.Z` release tag in production instead of `@main`.
 
-- uses: entur/openapi-validator-cli/action/validate@v0
+```yaml
+- uses: entur/openapi-validator/crates/cli/action/setup@main
+
+- uses: entur/openapi-validator/crates/cli/action/validate@main
   with:
     spec: openapi/api.yaml
 ```
@@ -25,11 +27,11 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup oav
-        uses: entur/openapi-validator-cli/action/setup@v0
+        uses: entur/openapi-validator/crates/cli/action/setup@main
 
       - name: Validate OpenAPI spec
         id: oav
-        uses: entur/openapi-validator-cli/action/validate@v0
+        uses: entur/openapi-validator/crates/cli/action/validate@main
         with:
           spec: openapi/api.yaml
           mode: both
@@ -41,7 +43,7 @@ jobs:
 If you want to use oav commands directly:
 
 ```yaml
-- uses: entur/openapi-validator-cli/action/setup@v0
+- uses: entur/openapi-validator/crates/cli/action/setup@main
   with:
     version: "0.3.0"
 

@@ -1,12 +1,12 @@
 # OpenAPI Validator CLI
 
-[![GitHub Release](https://img.shields.io/github/v/release/entur/openapi-validator-cli?style=flat-square&label=release)](https://github.com/entur/openapi-validator-cli/releases/latest)
+[![GitHub Release](https://img.shields.io/github/v/release/entur/openapi-validator?filter=cli-*&style=flat-square&label=release)](https://github.com/entur/openapi-validator/releases?q=cli-)
 [![Rust](https://img.shields.io/badge/rust-1.92%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org)
-[![Homebrew](https://img.shields.io/github/v/release/entur/openapi-validator-cli?style=flat-square&label=homebrew&color=fbb040)](https://github.com/entur/openapi-validator-cli#homebrew)
+[![Homebrew](https://img.shields.io/github/v/release/entur/openapi-validator?filter=cli-*&style=flat-square&label=homebrew&color=fbb040)](https://github.com/entur/openapi-validator#homebrew)
 [![License](https://img.shields.io/badge/license-EUPL--1.2-blue?style=flat-square)](LICENSE.md)
-[![Issues](https://img.shields.io/github/issues/entur/openapi-validator-cli?style=flat-square)](https://github.com/entur/openapi-validator-cli/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/entur/openapi-validator-cli?style=flat-square)](https://github.com/entur/openapi-validator-cli/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/entur/openapi-validator-cli?style=flat-square)](https://github.com/entur/openapi-validator-cli/commits/main)
+[![Issues](https://img.shields.io/github/issues/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/commits/main)
 
 Local CLI for linting, generating, and compiling OpenAPI specs. Runs everything through Docker, keeps output under `.oav/`, and uses a simple `.oavc` config file per project.
 
@@ -22,20 +22,20 @@ oav validate
 ### Homebrew
 
 ```bash
-brew tap entur/openapi-validator-cli https://github.com/entur/openapi-validator-cli
+brew tap entur/openapi-validator https://github.com/entur/openapi-validator
 brew install oav
 ```
 
 ### Shell script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/entur/openapi-validator-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/entur/openapi-validator/main/crates/cli/install.sh | bash
 ```
 
 ### Cargo
 
 ```bash
-cargo install --git https://github.com/entur/openapi-validator-cli
+cargo install --git https://github.com/entur/openapi-validator oav-cli
 ```
 
 ### Uninstall
@@ -105,8 +105,9 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full reference and [examples/](
 Available as a reusable action for CI workflows. See the [GitHub Action docs](docs/GITHUB_ACTION.md) for setup, inputs, and outputs.
 
 ```yaml
-- uses: entur/openapi-validator-cli/action/setup@v0
-- uses: entur/openapi-validator-cli/action/validate@v0
+# Pin to a specific cli-vX.Y.Z release tag in production instead of @main.
+- uses: entur/openapi-validator/crates/cli/action/setup@main
+- uses: entur/openapi-validator/crates/cli/action/validate@main
   with:
     spec: openapi/api.yaml
 ```

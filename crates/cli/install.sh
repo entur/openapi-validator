@@ -14,7 +14,7 @@ if ! command -v curl >/dev/null 2>&1; then
   exit 1
 fi
 
-repo="${OAV_REPO:-entur/openapi-validator-cli}"
+repo="${OAV_REPO:-entur/openapi-validator}"
 host="${OAV_GITHUB_HOST:-github.com}"
 api="${OAV_GITHUB_API:-https://api.github.com}"
 if [[ "$host" != "github.com" && -z "${OAV_GITHUB_API:-}" ]]; then
@@ -34,13 +34,15 @@ fi
 if [[ -n "${OAV_VERSION:-}" ]]; then
   version="${OAV_VERSION}"
 else
-  json="$(curl -fsSL "${auth_header[@]}" "${api}/repos/${repo}/releases/latest")"
-  tag="$(printf '%s' "$json" | awk -F\" '/"tag_name":/ {print $4; exit}')"
+  # This repo hosts both oav and lazyoav releases, so /releases/latest could
+  # return either one. Find the newest release tagged for this component instead.
+  json="$(curl -fsSL "${auth_header[@]}" "${api}/repos/${repo}/releases?per_page=30")"
+  tag="$(printf '%s' "$json" | awk -F\" '/"tag_name":/ { if ($4 ~ /^cli-v/) { print $4; exit } }')"
   if [[ -z "$tag" ]]; then
-    echo "Unable to determine latest release tag."
+    echo "Unable to determine latest release tag for cli."
     exit 1
   fi
-  version="${tag#v}"
+  version="${tag#cli-v}"
 fi
 
 os="$(uname -s)"
@@ -63,7 +65,7 @@ case "$target" in
   *) echo "No prebuilt binary for ${target}" ; exit 1 ;;
 esac
 
-base_url="https://${host}/${repo}/releases/download/v${version}"
+base_url="https://${host}/${repo}/releases/download/cli-v${version}"
 asset="oav-${version}-${target}.tar.gz"
 sha_asset="${asset}.sha256"
 

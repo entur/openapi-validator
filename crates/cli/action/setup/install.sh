@@ -9,7 +9,7 @@ install_dir="${RUNNER_TOOL_CACHE:-$HOME/.oav/bin}/oav/${version}"
 mkdir -p "$install_dir"
 
 if [[ "${CACHE_HIT}" != "true" ]]; then
-  base_url="https://github.com/entur/openapi-validator-cli/releases/download/v${version}"
+  base_url="https://github.com/entur/openapi-validator/releases/download/cli-v${version}"
   asset="oav-${version}-${target}.tar.gz"
   sha_asset="${asset}.sha256"
 

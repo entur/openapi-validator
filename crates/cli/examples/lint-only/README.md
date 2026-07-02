@@ -18,7 +18,7 @@ oav validate
 ## CI example
 
 ```yaml
-- uses: entur/openapi-validator-cli/action/validate@v0
+- uses: entur/openapi-validator/crates/cli/action/validate@main
   with:
     spec: openapi/api.yaml
     skip-generate: "true"
