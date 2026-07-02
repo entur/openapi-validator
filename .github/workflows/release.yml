@@ -1,0 +1,16 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release-please:
+    uses: entur/gha-meta/.github/workflows/release.yml@v1
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    with:
+      release_type: manifest
