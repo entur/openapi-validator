@@ -73,9 +73,7 @@ fn unknown_generator_in_existing_config_warns_but_succeeds() {
         .args(["init", "--spec", "openapi.yaml"])
         .assert()
         .success()
-        .stderr(predicate::str::contains(
-            "Unknown server generator 'bogus'",
-        ));
+        .stderr(predicate::str::contains("Unknown server generator 'bogus'"));
 }
 
 #[test]

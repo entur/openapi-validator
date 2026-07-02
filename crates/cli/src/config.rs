@@ -57,7 +57,11 @@ pub fn validate_for_run(config: &Config, custom: &[CustomGeneratorDef]) -> Resul
     Ok(warnings)
 }
 
-fn unknown_generator_warnings(scope: &str, generators: &[String], supported: &[&str]) -> Vec<String> {
+fn unknown_generator_warnings(
+    scope: &str,
+    generators: &[String],
+    supported: &[&str],
+) -> Vec<String> {
     generators
         .iter()
         .map(|g| g.trim())

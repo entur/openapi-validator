@@ -587,31 +587,33 @@ fn write_status_from_report(root: &Path, report: &ValidateReport) -> Result<()> 
     let mut lines = Vec::new();
     if let Some(lint) = &report.phases.lint {
         lines.push(format!(
-            "lint\tspec\t{}\t{}\t{}",
+            "lint\tspec\t{}\t{}\treports/lint/{}.log",
             lint.linter,
             status_to_tsv(&lint.status),
-            format!("reports/lint/{}.log", lint.linter)
+            lint.linter
         ));
     }
     if let Some(generate) = &report.phases.generate {
         for step in generate {
             lines.push(format!(
-                "generate\t{}\t{}\t{}\t{}",
+                "generate\t{}\t{}\t{}\treports/generate/{}/{}.log",
                 step.scope,
                 step.generator,
                 status_to_tsv(&step.status),
-                format!("reports/generate/{}/{}.log", step.scope, step.generator)
+                step.scope,
+                step.generator
             ));
         }
     }
     if let Some(compile) = &report.phases.compile {
         for step in compile {
             lines.push(format!(
-                "compile\t{}\t{}\t{}\t{}",
+                "compile\t{}\t{}\t{}\treports/compile/{}/{}.log",
                 step.scope,
                 step.generator,
                 status_to_tsv(&step.status),
-                format!("reports/compile/{}/{}.log", step.scope, step.generator)
+                step.scope,
+                step.generator
             ));
         }
     }

@@ -98,12 +98,15 @@ fn unknown_generator_in_config_warns_but_succeeds() {
 
     oav_command()
         .current_dir(temp.path())
-        .args(["validate", "--skip-lint", "--skip-generate", "--skip-compile"])
+        .args([
+            "validate",
+            "--skip-lint",
+            "--skip-generate",
+            "--skip-compile",
+        ])
         .assert()
         .success()
-        .stderr(predicate::str::contains(
-            "Unknown server generator 'bogus'",
-        ));
+        .stderr(predicate::str::contains("Unknown server generator 'bogus'"));
 }
 
 #[test]

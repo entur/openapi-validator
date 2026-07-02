@@ -53,7 +53,10 @@ mod tests {
             custom: vec![],
         };
         let json = serde_json::to_value(&list).unwrap();
-        assert!(json.get("custom").is_none(), "empty custom should be omitted");
+        assert!(
+            json.get("custom").is_none(),
+            "empty custom should be omitted"
+        );
         assert_eq!(json["server"], serde_json::json!(["spring"]));
         assert_eq!(json["client"], serde_json::json!(["typescript-axios"]));
     }

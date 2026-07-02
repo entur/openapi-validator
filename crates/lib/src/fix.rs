@@ -41,9 +41,7 @@ pub fn propose_fix(
         "operation-summary" => rules::propose_operation_summary(error, spec_index, &lines),
         "operation-description" => rules::propose_operation_description(error, spec_index, &lines),
         "operation-tags" => rules::propose_operation_tags(error, spec_index, &lines),
-        "operation-operationId" => {
-            rules::propose_operation_operation_id(error, spec_index, &lines)
-        }
+        "operation-operationId" => rules::propose_operation_operation_id(error, spec_index, &lines),
         "info-contact" => rules::propose_info_contact(error, spec_index, &lines),
         "info-license" => rules::propose_info_license(error, spec_index, &lines),
         _ => None,
