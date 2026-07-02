@@ -1,12 +1,12 @@
 # OpenAPI Validator TUI
 
-[![GitHub Release](https://img.shields.io/github/v/release/entur/openapi-validator-tui?style=flat-square&label=release)](https://github.com/entur/openapi-validator-tui/releases/latest)
+[![GitHub Release](https://img.shields.io/github/v/release/entur/openapi-validator?filter=tui-*&style=flat-square&label=release)](https://github.com/entur/openapi-validator/releases?q=tui-)
 [![Rust](https://img.shields.io/badge/rust-1.92%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org)
-[![Homebrew](https://img.shields.io/github/v/release/entur/openapi-validator-tui?style=flat-square&label=homebrew&color=fbb040)](https://github.com/entur/openapi-validator-tui#homebrew)
+[![Homebrew](https://img.shields.io/github/v/release/entur/openapi-validator?filter=tui-*&style=flat-square&label=homebrew&color=fbb040)](https://github.com/entur/openapi-validator#homebrew)
 [![License](https://img.shields.io/badge/license-EUPL--1.2-blue?style=flat-square)](LICENSE.md)
-[![Issues](https://img.shields.io/github/issues/entur/openapi-validator-tui?style=flat-square)](https://github.com/entur/openapi-validator-tui/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/entur/openapi-validator-tui?style=flat-square)](https://github.com/entur/openapi-validator-tui/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/entur/openapi-validator-tui?style=flat-square)](https://github.com/entur/openapi-validator-tui/commits/main)
+[![Issues](https://img.shields.io/github/issues/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/commits/main)
 
 Interactive terminal UI for linting, generating, and compiling OpenAPI specs. Explore validation results, browse generated code, compare diffs across runs, and edit specs — all from a single TUI powered by Docker and `.oavc` config.
 
@@ -24,20 +24,20 @@ Launches the TUI in the current directory. Reads `.oavc` for config and runs the
 ### Homebrew
 
 ```bash
-brew tap entur/openapi-validator-tui https://github.com/entur/openapi-validator-tui
+brew tap entur/openapi-validator https://github.com/entur/openapi-validator
 brew install lazyoav
 ```
 
 ### Shell script
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/entur/openapi-validator-tui/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/entur/openapi-validator/main/crates/tui/install.sh | bash
 ```
 
 ### Cargo
 
 ```bash
-cargo install --git https://github.com/entur/openapi-validator-tui
+cargo install --git https://github.com/entur/openapi-validator oav-tui
 ```
 
 ### Uninstall
@@ -84,7 +84,7 @@ mode: both
 linter: spectral
 ```
 
-See the [CLI documentation](https://github.com/entur/openapi-validator-cli) for the full config reference.
+See the [CLI documentation](https://github.com/entur/openapi-validator/tree/main/crates/cli) for the full config reference.
 
 ## Requirements
 
