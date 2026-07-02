@@ -2,6 +2,14 @@
 
 All notable changes to OpenAPI Validator will be documented in this file.
 
+## [0.7.1](https://github.com/entur/openapi-validator/compare/cli-v0.7.0...cli-v0.7.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **cli:** point install script, action, and docs at the merged repo ([6d7ced5](https://github.com/entur/openapi-validator/commit/6d7ced5c69bdd46cb88e2ee51f09a5f5d424dbc4))
+* **cli:** warn instead of failing on unknown generators before running ([458c9aa](https://github.com/entur/openapi-validator/commit/458c9aa34b41587eebf9c5554fd89c066b43ba68))
+
 ## v0.7.0
 
 - Support validating specs from a URL (`oav validate --spec https://...`)
