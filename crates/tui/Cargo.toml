@@ -27,7 +27,7 @@ yaml_serde = "0.10"
 include_dir = "0.7"
 shell-words = "1.1.1"
 similar = "3"
-syntect = "5"
+syntect = { version = "5", default-features = false, features = ["parsing", "default-themes", "regex-onig"] }
 two-face = { version = "0.5", default-features = false, features = ["syntect-onig"] }
 
 [target.'cfg(unix)'.dependencies]
