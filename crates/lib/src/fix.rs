@@ -210,4 +210,95 @@ mod tests {
 
         assert!(propose_fix(&error, &index, f.path()).unwrap().is_none());
     }
+
+    const PETSTORE_YAML: &str = "\
+openapi: 3.0.0
+info:
+  title: Pet Store
+  version: '1.0'
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      responses:
+        '200':
+          description: OK
+";
+
+    fn write_spec(content: &str) -> NamedTempFile {
+        let mut f = NamedTempFile::new().unwrap();
+        write!(f, "{content}").unwrap();
+        f
+    }
+
+    fn lint_error(rule: &str, json_path: Option<&str>) -> crate::log_parser::LintError {
+        crate::log_parser::LintError {
+            line: 1,
+            col: 0,
+            severity: crate::log_parser::Severity::Error,
+            rule: rule.into(),
+            message: format!("{rule} message"),
+            json_path: json_path.map(String::from),
+        }
+    }
+
+    #[test]
+    fn propose_and_apply_operation_summary_round_trips() {
+        let index = crate::spec::parse_spec(PETSTORE_YAML).unwrap();
+        let f = write_spec(PETSTORE_YAML);
+        let error = lint_error("operation-summary", Some("/paths/~1pets/get"));
+
+        let proposal = propose_fix(&error, &index, f.path()).unwrap().unwrap();
+        apply_fix(&proposal, f.path()).unwrap();
+
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        let reparsed = crate::spec::parse_spec(&result).unwrap();
+        assert!(result.contains("summary:"));
+        assert!(reparsed.resolve("/paths/~1pets/get/summary").is_some());
+    }
+
+    #[test]
+    fn propose_and_apply_operation_description_round_trips() {
+        let index = crate::spec::parse_spec(PETSTORE_YAML).unwrap();
+        let f = write_spec(PETSTORE_YAML);
+        let error = lint_error("operation-description", Some("/paths/~1pets/get"));
+
+        let proposal = propose_fix(&error, &index, f.path()).unwrap().unwrap();
+        apply_fix(&proposal, f.path()).unwrap();
+
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        let reparsed = crate::spec::parse_spec(&result).unwrap();
+        assert!(result.contains("description:"));
+        assert!(reparsed.resolve("/paths/~1pets/get/description").is_some());
+    }
+
+    #[test]
+    fn propose_and_apply_info_contact_round_trips() {
+        let index = crate::spec::parse_spec(PETSTORE_YAML).unwrap();
+        let f = write_spec(PETSTORE_YAML);
+        let error = lint_error("info-contact", None);
+
+        let proposal = propose_fix(&error, &index, f.path()).unwrap().unwrap();
+        apply_fix(&proposal, f.path()).unwrap();
+
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        let reparsed = crate::spec::parse_spec(&result).unwrap();
+        assert!(result.contains("contact:"));
+        assert!(reparsed.resolve("/info/contact").is_some());
+    }
+
+    #[test]
+    fn propose_and_apply_info_license_round_trips() {
+        let index = crate::spec::parse_spec(PETSTORE_YAML).unwrap();
+        let f = write_spec(PETSTORE_YAML);
+        let error = lint_error("info-license", None);
+
+        let proposal = propose_fix(&error, &index, f.path()).unwrap().unwrap();
+        apply_fix(&proposal, f.path()).unwrap();
+
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        let reparsed = crate::spec::parse_spec(&result).unwrap();
+        assert!(result.contains("license:"));
+        assert!(reparsed.resolve("/info/license").is_some());
+    }
 }
