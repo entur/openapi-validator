@@ -241,8 +241,9 @@ fn handle_key(app: &mut App, key: KeyEvent) -> Action {
     if app.fix_proposal.is_some() {
         match key.code {
             KeyCode::Char('y') => {
-                let proposal = app.fix_proposal.take().unwrap();
-                if let Some(spec_path) = &app.spec_path {
+                if let Some(proposal) = app.fix_proposal.take()
+                    && let Some(spec_path) = &app.spec_path
+                {
                     match fix::apply_fix(&proposal, spec_path) {
                         Ok(()) => {
                             // Re-parse spec after modification.
