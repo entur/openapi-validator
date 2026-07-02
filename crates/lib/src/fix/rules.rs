@@ -160,6 +160,78 @@ pub fn propose_operation_description(
     })
 }
 
+pub fn propose_operation_tags(
+    error: &LintError,
+    spec_index: &SpecIndex,
+    lines: &[String],
+) -> Option<FixProposal> {
+    let (op_line, _) = resolve_operation_context(error, spec_index, lines)?;
+    let indent = detect_child_indent(lines, op_line)?;
+    let inserted = vec![format!("{indent}tags:"), format!("{indent}  - \"\"")];
+    let (ctx_before, ctx_after) = gather_context(lines, op_line + 1, 3);
+
+    Some(FixProposal {
+        rule: error.rule.clone(),
+        description: "Add 'tags' field to the operation".into(),
+        target_line: op_line,
+        context_before: ctx_before,
+        inserted,
+        context_after: ctx_after,
+    })
+}
+
+pub fn propose_operation_operation_id(
+    error: &LintError,
+    spec_index: &SpecIndex,
+    lines: &[String],
+) -> Option<FixProposal> {
+    let json_path = error.json_path.as_deref()?;
+    let span = spec_index.resolve(json_path)?;
+    let op_line = span.line;
+    if op_line == 0 || op_line > lines.len() {
+        return None;
+    }
+    let indent = detect_child_indent(lines, op_line)?;
+    let op_id = generate_operation_id(json_path);
+    let inserted = vec![format!("{indent}operationId: {op_id}")];
+    let (ctx_before, ctx_after) = gather_context(lines, op_line + 1, 3);
+
+    Some(FixProposal {
+        rule: error.rule.clone(),
+        description: "Add 'operationId' field to the operation".into(),
+        target_line: op_line,
+        context_before: ctx_before,
+        inserted,
+        context_after: ctx_after,
+    })
+}
+
+/// Derive an operationId (e.g. `getPetsId`) from a json_path like
+/// `/paths/~1pets~1{id}/get`.
+fn generate_operation_id(json_path: &str) -> String {
+    let mut segments = json_path.trim_start_matches('/').split('/');
+    segments.next(); // "paths"
+    let escaped_path = segments.next().unwrap_or("");
+    let method = segments.next().unwrap_or("operation");
+
+    let decoded_path = escaped_path.replace("~1", "/").replace("~0", "~");
+    let path_words: String = decoded_path
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .map(|segment| capitalize(segment.trim_start_matches('{').trim_end_matches('}')))
+        .collect();
+
+    format!("{method}{path_words}")
+}
+
+fn capitalize(word: &str) -> String {
+    let mut chars = word.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+        None => String::new(),
+    }
+}
+
 pub fn propose_info_contact(
     error: &LintError,
     spec_index: &SpecIndex,
@@ -321,6 +393,46 @@ paths:
         assert_eq!(proposal.target_line, 7);
         assert!(proposal.inserted[0].contains("description:"));
         assert!(proposal.inserted[0].contains("listPets"));
+    }
+
+    #[test]
+    fn propose_operation_tags_generates_fix() {
+        let lines: Vec<String> = PETSTORE_YAML.lines().map(String::from).collect();
+        let index = parse_spec(PETSTORE_YAML).unwrap();
+        let error = make_error("operation-tags", Some("/paths/~1pets/get"));
+
+        let proposal = propose_operation_tags(&error, &index, &lines).unwrap();
+        assert_eq!(proposal.target_line, 7);
+        assert_eq!(proposal.inserted.len(), 2);
+        assert!(proposal.inserted[0].contains("tags:"));
+        assert!(proposal.inserted[1].trim_start().starts_with('-'));
+    }
+
+    #[test]
+    fn propose_operation_operation_id_generates_fix() {
+        let lines: Vec<String> = PETSTORE_YAML.lines().map(String::from).collect();
+        let index = parse_spec(PETSTORE_YAML).unwrap();
+        let error = make_error("operation-operationId", Some("/paths/~1pets/get"));
+
+        let proposal = propose_operation_operation_id(&error, &index, &lines).unwrap();
+        assert_eq!(proposal.target_line, 7);
+        assert_eq!(proposal.inserted.len(), 1);
+        assert!(proposal.inserted[0].contains("operationId: getPets"));
+    }
+
+    #[test]
+    fn generate_operation_id_includes_path_param() {
+        let id = generate_operation_id("/paths/~1pets~1{id}/get");
+        assert_eq!(id, "getPetsId");
+    }
+
+    #[test]
+    fn propose_operation_operation_id_no_json_path_returns_none() {
+        let lines: Vec<String> = PETSTORE_YAML.lines().map(String::from).collect();
+        let index = parse_spec(PETSTORE_YAML).unwrap();
+        let error = make_error("operation-operationId", None);
+
+        assert!(propose_operation_operation_id(&error, &index, &lines).is_none());
     }
 
     #[test]

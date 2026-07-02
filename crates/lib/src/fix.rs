@@ -40,6 +40,10 @@ pub fn propose_fix(
     let proposal = match error.rule.as_str() {
         "operation-summary" => rules::propose_operation_summary(error, spec_index, &lines),
         "operation-description" => rules::propose_operation_description(error, spec_index, &lines),
+        "operation-tags" => rules::propose_operation_tags(error, spec_index, &lines),
+        "operation-operationId" => {
+            rules::propose_operation_operation_id(error, spec_index, &lines)
+        }
         "info-contact" => rules::propose_info_contact(error, spec_index, &lines),
         "info-license" => rules::propose_info_license(error, spec_index, &lines),
         _ => None,
@@ -270,6 +274,49 @@ paths:
         let reparsed = crate::spec::parse_spec(&result).unwrap();
         assert!(result.contains("description:"));
         assert!(reparsed.resolve("/paths/~1pets/get/description").is_some());
+    }
+
+    #[test]
+    fn propose_and_apply_operation_tags_round_trips() {
+        let index = crate::spec::parse_spec(PETSTORE_YAML).unwrap();
+        let f = write_spec(PETSTORE_YAML);
+        let error = lint_error("operation-tags", Some("/paths/~1pets/get"));
+
+        let proposal = propose_fix(&error, &index, f.path()).unwrap().unwrap();
+        apply_fix(&proposal, f.path()).unwrap();
+
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        let reparsed = crate::spec::parse_spec(&result).unwrap();
+        assert!(result.contains("tags:"));
+        assert!(reparsed.resolve("/paths/~1pets/get/tags").is_some());
+    }
+
+    const PETSTORE_NO_OPERATION_ID_YAML: &str = "\
+openapi: 3.0.0
+info:
+  title: Pet Store
+  version: '1.0'
+paths:
+  /pets:
+    get:
+      responses:
+        '200':
+          description: OK
+";
+
+    #[test]
+    fn propose_and_apply_operation_operation_id_round_trips() {
+        let index = crate::spec::parse_spec(PETSTORE_NO_OPERATION_ID_YAML).unwrap();
+        let f = write_spec(PETSTORE_NO_OPERATION_ID_YAML);
+        let error = lint_error("operation-operationId", Some("/paths/~1pets/get"));
+
+        let proposal = propose_fix(&error, &index, f.path()).unwrap().unwrap();
+        apply_fix(&proposal, f.path()).unwrap();
+
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        let reparsed = crate::spec::parse_spec(&result).unwrap();
+        assert!(result.contains("operationId: getPets"));
+        assert!(reparsed.resolve("/paths/~1pets/get/operationId").is_some());
     }
 
     #[test]
