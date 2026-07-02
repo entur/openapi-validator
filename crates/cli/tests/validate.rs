@@ -87,6 +87,26 @@ fn search_depth_zero_rejected() {
 }
 
 #[test]
+fn unknown_generator_in_config_warns_but_succeeds() {
+    let temp = TempDir::new().unwrap();
+    fs::copy(fixture_path("valid.yml"), temp.path().join("openapi.yaml")).unwrap();
+    fs::write(
+        temp.path().join(".oavc"),
+        "spec: openapi.yaml\nmode: server\nlint: false\ngenerate: false\ncompile: false\nserver_generators:\n  - bogus\n",
+    )
+    .unwrap();
+
+    oav_command()
+        .current_dir(temp.path())
+        .args(["validate", "--skip-lint", "--skip-generate", "--skip-compile"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(
+            "Unknown server generator 'bogus'",
+        ));
+}
+
+#[test]
 fn infra_error_exits_with_code_2() {
     let temp = TempDir::new().unwrap();
     // No spec and no .oavc → infra error

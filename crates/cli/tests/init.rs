@@ -59,6 +59,26 @@ fn search_depth_zero_rejected() {
 }
 
 #[test]
+fn unknown_generator_in_existing_config_warns_but_succeeds() {
+    let temp = TempDir::new().unwrap();
+    fs::copy(fixture_path("valid.yml"), temp.path().join("openapi.yaml")).unwrap();
+    fs::write(
+        temp.path().join(".oavc"),
+        "spec: openapi.yaml\nmode: server\nserver_generators:\n  - bogus\n",
+    )
+    .unwrap();
+
+    oav_command()
+        .current_dir(temp.path())
+        .args(["init", "--spec", "openapi.yaml"])
+        .assert()
+        .success()
+        .stderr(predicate::str::contains(
+            "Unknown server generator 'bogus'",
+        ));
+}
+
+#[test]
 fn search_depth_valid_accepted() {
     let temp = TempDir::new().unwrap();
     fs::copy(fixture_path("valid.yml"), temp.path().join("openapi.yaml")).unwrap();

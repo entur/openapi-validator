@@ -240,7 +240,9 @@ fn cmd_init(root: &Path, output: &Output, args: InitArgs) -> Result<()> {
     let spec_path = util::normalize_spec_path(root, &spec)?;
     cfg.spec = Some(spec_path.to_string_lossy().to_string());
 
-    config::validate(&cfg, &custom_defs)?;
+    for warning in config::validate_for_run(&cfg, &custom_defs)? {
+        output.print_warning(&warning);
+    }
     config::write(root, &cfg)?;
     util::extract_assets(root, &ASSETS)?;
 
@@ -361,7 +363,9 @@ fn cmd_init_interactive(root: &Path, output: &Output, args: InitArgs) -> Result<
     };
 
     // 5. Write config and finish
-    config::validate(&cfg, &custom_defs)?;
+    for warning in config::validate_for_run(&cfg, &custom_defs)? {
+        output.print_warning(&warning);
+    }
     config::write(root, &cfg)?;
     util::extract_assets(root, &ASSETS)?;
 
@@ -473,7 +477,9 @@ fn cmd_validate(root: &Path, output: &Output, args: ValidateArgs) -> Result<()> 
         oav_lib::docker::ensure_available()?;
     }
 
-    config::validate(&cfg, &custom_defs)?;
+    for warning in config::validate_for_run(&cfg, &custom_defs)? {
+        output.print_warning(&warning);
+    }
     util::prepare_runtime_dirs(root)?;
     config::write(root, &cfg)?;
 

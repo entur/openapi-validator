@@ -27,6 +27,47 @@ pub fn validate(config: &Config, custom: &[CustomGeneratorDef]) -> Result<()> {
     Ok(())
 }
 
+/// Non-fatal check run before `init`/`validate`/`generate`/`compile` proceed.
+///
+/// Structural problems (bad timeout, depth, or job count) still bail, since
+/// those break the pipeline outright. Unknown generator names only produce a
+/// warning: the pipeline falls back to running them bare via `-g`, matching
+/// the TUI's non-fatal treatment of the same case.
+pub fn validate_for_run(config: &Config, custom: &[CustomGeneratorDef]) -> Result<Vec<String>> {
+    if config.docker_timeout == 0 {
+        bail!("docker_timeout must be greater than 0");
+    }
+    if config.search_depth == 0 {
+        bail!("search_depth must be greater than 0");
+    }
+    if let Jobs::Fixed(0) = config.jobs {
+        bail!("jobs must be \"auto\" or a positive integer");
+    }
+    let server_owned = generators::all_server_names(custom);
+    let client_owned = generators::all_client_names(custom);
+    let all_server: Vec<&str> = server_owned.iter().map(|s| s.as_str()).collect();
+    let all_client: Vec<&str> = client_owned.iter().map(|s| s.as_str()).collect();
+
+    let mut warnings = unknown_generator_warnings("server", &config.server_generators, &all_server);
+    warnings.extend(unknown_generator_warnings(
+        "client",
+        &config.client_generators,
+        &all_client,
+    ));
+    Ok(warnings)
+}
+
+fn unknown_generator_warnings(scope: &str, generators: &[String], supported: &[&str]) -> Vec<String> {
+    generators
+        .iter()
+        .map(|g| g.trim())
+        .filter(|name| !name.is_empty() && !supported.contains(name))
+        .map(|name| {
+            format!("Unknown {scope} generator '{name}' — no built-in or custom config available")
+        })
+        .collect()
+}
+
 pub fn print_value(config: &Config, key: &str) -> Result<()> {
     let (base, subkey) = parse_key(key);
 
