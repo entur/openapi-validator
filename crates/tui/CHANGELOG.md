@@ -2,6 +2,15 @@
 
 All notable changes to OpenAPI Validator TUI will be documented in this file.
 
+## 0.1.0 (2026-07-02)
+
+
+### Bug Fixes
+
+* **tui:** avoid unwrap on fix proposal in key handler ([e756a75](https://github.com/entur/openapi-validator/commit/e756a75ca3aa8bfb5da19fa3fbd457551e3c834d))
+* **tui:** drop syntect's plist-load feature to remove vulnerable quick-xml ([29bd2e7](https://github.com/entur/openapi-validator/commit/29bd2e7dd652564051811a7ad66ddb237b82528e))
+* **tui:** point install script and readme at the merged repo ([21b9382](https://github.com/entur/openapi-validator/commit/21b9382da8784d56cf468e81f530a061cf8a2824))
+
 ## v0.1.0
 
 - Add custom generator support via YAML definitions
