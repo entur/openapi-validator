@@ -30,7 +30,7 @@ jobs:
   # API failure, still publish the tags that landed on the merge commit.
   discover-tags:
     needs: release-please
-    if: always() && needs.release-please.result != 'cancelled'
+    if: always() && needs.release-please.result != 'cancelled' && (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.releases_created == 'true' || needs.release-please.result == 'failure')
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -49,7 +49,7 @@ jobs:
             tags='${{ inputs.tags }}'
             jq -e 'type == "array" and all(.[]; type == "string" and test("^(cli|tui)-v"))' <<< "$tags" > /dev/null
           else
-            tags="$(git tag --points-at HEAD | grep -E '^(cli|tui)-v' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+            tags="$(git tag --points-at HEAD | awk '/^(cli|tui)-v/' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
           fi
           echo "Found tags: ${tags}"
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
