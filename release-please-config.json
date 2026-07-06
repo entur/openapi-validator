@@ -6,8 +6,7 @@
   "plugins": ["cargo-workspace"],
   "packages": {
     "crates/lib": {
-      "component": "lib",
-      "skip-github-release": true
+      "component": "lib"
     },
     "crates/cli": {
       "component": "cli"
