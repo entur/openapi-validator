@@ -4,9 +4,16 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'JSON array of tags to publish, for example ["cli-v0.7.1","tui-v0.1.0"]'
+        required: false
+        type: string
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     uses: entur/gha-meta/.github/workflows/release.yml@v1
     permissions:
       contents: write
@@ -19,9 +26,11 @@ jobs:
   # anti-recursion rule) would NOT trigger a separate tag-push-triggered
   # workflow. So instead of a second workflow listening for tag pushes, we
   # discover what it just tagged as a later job in this same run.
+  # If release-please creates tags but exits non-zero after a transient GitHub
+  # API failure, still publish the tags that landed on the merge commit.
   discover-tags:
     needs: release-please
-    if: needs.release-please.outputs.releases_created == 'true'
+    if: always() && needs.release-please.result != 'cancelled'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -36,7 +45,12 @@ jobs:
       - id: find
         shell: bash
         run: |
-          tags="$(git tag --points-at HEAD | grep -E '^(cli|tui)-v' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' && '${{ inputs.tags }}' != '' ]]; then
+            tags='${{ inputs.tags }}'
+            jq -e 'type == "array" and all(.[]; type == "string" and test("^(cli|tui)-v"))' <<< "$tags" > /dev/null
+          else
+            tags="$(git tag --points-at HEAD | grep -E '^(cli|tui)-v' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+          fi
           echo "Found tags: ${tags}"
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
 
@@ -65,9 +79,11 @@ jobs:
             tui-v*) crate=tui; binary=lazyoav; version="${tag#tui-v}" ;;
             *) echo "::error::unrecognized tag: $tag"; exit 1 ;;
           esac
-          echo "crate=${crate}" >> "$GITHUB_OUTPUT"
-          echo "binary=${binary}" >> "$GITHUB_OUTPUT"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          {
+            echo "crate=${crate}"
+            echo "binary=${binary}"
+            echo "version=${version}"
+          } >> "$GITHUB_OUTPUT"
       - uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1.16.1
         with:
           target: ${{ matrix.target.triple }}
