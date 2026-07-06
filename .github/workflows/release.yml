@@ -56,7 +56,7 @@ jobs:
 
   build:
     needs: discover-tags
-    if: needs.discover-tags.result == 'success' && needs.discover-tags.outputs.tags != '[]'
+    if: always() && needs.discover-tags.result == 'success' && needs.discover-tags.outputs.tags != '[]'
     strategy:
       fail-fast: false
       matrix:
@@ -112,7 +112,7 @@ jobs:
 
   publish:
     needs: [discover-tags, build]
-    if: needs.discover-tags.result == 'success' && needs.discover-tags.outputs.tags != '[]'
+    if: always() && needs.discover-tags.result == 'success' && needs.build.result == 'success' && needs.discover-tags.outputs.tags != '[]'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
