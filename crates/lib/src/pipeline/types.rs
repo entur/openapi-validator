@@ -52,7 +52,8 @@ pub struct PipelineInput {
 }
 
 /// Identifies which pipeline phase is running.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum Phase {
     Lint,
     Generate { generator: String, scope: String },
@@ -60,7 +61,11 @@ pub enum Phase {
 }
 
 /// Events emitted by the pipeline orchestrator.
-#[derive(Debug)]
+///
+/// Serializes adjacently tagged (`{"type": ..., "data": ...}`) so frontends
+/// receive a discriminated union.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", content = "data", rename_all = "snake_case")]
 #[allow(dead_code)]
 pub enum PipelineEvent {
     PhaseStarted(Phase),
@@ -77,4 +82,70 @@ pub enum PipelineEvent {
     LintCompleted(LintResult),
     Completed(ValidateReport),
     Aborted(String),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn phase_serializes_internally_tagged() {
+        let json = serde_json::to_value(Phase::Lint).unwrap();
+        assert_eq!(json, serde_json::json!({"type": "lint"}));
+
+        let json = serde_json::to_value(Phase::Generate {
+            generator: "spring".into(),
+            scope: "server".into(),
+        })
+        .unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({"type": "generate", "generator": "spring", "scope": "server"})
+        );
+    }
+
+    #[test]
+    fn pipeline_event_serializes_adjacently_tagged() {
+        let json = serde_json::to_value(PipelineEvent::Log {
+            phase: Phase::Lint,
+            line: "checking".into(),
+        })
+        .unwrap();
+        assert_eq!(
+            json,
+            serde_json::json!({
+                "type": "log",
+                "data": {"phase": {"type": "lint"}, "line": "checking"}
+            })
+        );
+
+        let json = serde_json::to_value(PipelineEvent::Aborted("boom".into())).unwrap();
+        assert_eq!(json, serde_json::json!({"type": "aborted", "data": "boom"}));
+    }
+
+    #[test]
+    fn pipeline_event_json_round_trips() {
+        let event = PipelineEvent::PhaseFinished {
+            phase: Phase::Compile {
+                generator: "go".into(),
+                scope: "client".into(),
+            },
+            success: true,
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        let back: PipelineEvent = serde_json::from_str(&json).unwrap();
+        match back {
+            PipelineEvent::PhaseFinished { phase, success } => {
+                assert!(success);
+                assert_eq!(
+                    phase,
+                    Phase::Compile {
+                        generator: "go".into(),
+                        scope: "client".into(),
+                    }
+                );
+            }
+            other => panic!("unexpected event: {other:?}"),
+        }
+    }
 }

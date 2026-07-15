@@ -3,11 +3,11 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::generators;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CustomGeneratorDef {
     pub name: String,
     pub scope: String,
@@ -15,13 +15,13 @@ pub struct CustomGeneratorDef {
     pub compile: Option<CompileBlock>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerateBlock {
     pub image: String,
     pub command: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompileBlock {
     pub image: String,
     pub command: String,

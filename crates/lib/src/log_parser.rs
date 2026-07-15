@@ -6,8 +6,11 @@ pub use parse::parse_lint_log;
 use std::cmp::Ordering;
 use std::fmt;
 
+use serde::{Deserialize, Serialize};
+
 /// Severity level of a lint finding.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Severity {
     Error,
     Warning,
@@ -60,7 +63,7 @@ impl fmt::Display for Severity {
 }
 
 /// A single lint finding parsed from linter output.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LintError {
     pub line: usize,
     pub col: usize,
@@ -68,4 +71,17 @@ pub struct LintError {
     pub rule: String,
     pub message: String,
     pub json_path: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn severity_serializes_lowercase() {
+        assert_eq!(serde_json::to_value(Severity::Error).unwrap(), "error");
+        assert_eq!(serde_json::to_value(Severity::Hint).unwrap(), "hint");
+        let back: Severity = serde_json::from_str("\"warning\"").unwrap();
+        assert_eq!(back, Severity::Warning);
+    }
 }

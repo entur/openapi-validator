@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
 /// A single error parsed from a compile log.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct CompileError {
     /// Path relative to the generated output root.
@@ -15,7 +16,7 @@ pub struct CompileError {
 }
 
 /// Bidirectional mapping between spec constructs and generated files.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TraceIndex {
     /// Spec construct name (e.g. "Pet", "listPets") → generated file relative paths.
     pub spec_to_files: HashMap<String, Vec<PathBuf>>,
@@ -729,5 +730,27 @@ Some random noise
         };
         let m = comment_based_match(&file, &names);
         assert_eq!(m, vec!["Pet"]);
+    }
+
+    #[test]
+    fn trace_index_json_round_trips_with_pathbuf_keys() {
+        let mut index = TraceIndex::default();
+        index
+            .spec_to_files
+            .insert("Pet".into(), vec![PathBuf::from("src/model/pet.rs")]);
+        index
+            .file_to_spec
+            .insert(PathBuf::from("src/model/pet.rs"), vec!["Pet".into()]);
+
+        let json = serde_json::to_string(&index).unwrap();
+        let back: TraceIndex = serde_json::from_str(&json).unwrap();
+        assert_eq!(
+            back.spec_to_files["Pet"],
+            vec![PathBuf::from("src/model/pet.rs")]
+        );
+        assert_eq!(
+            back.file_to_spec[&PathBuf::from("src/model/pet.rs")],
+            vec!["Pet".to_string()]
+        );
     }
 }

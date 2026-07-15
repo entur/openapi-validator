@@ -4,11 +4,13 @@ mod rules;
 use std::path::Path;
 
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 
 use crate::log_parser::LintError;
 use crate::spec::SpecIndex;
 
 /// A proposed fix for a lint error, ready for preview and application.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FixProposal {
     /// The lint rule that triggered this fix.
     pub rule: String,
