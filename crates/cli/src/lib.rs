@@ -166,7 +166,7 @@ fn cmd_init(root: &Path, output: &Output, args: InitArgs) -> Result<()> {
     }
 
     let mut cfg = config::load(root)?;
-    util::ensure_oav_dir(root)?;
+    util::prepare_workspace(root)?;
     if cfg.manage_gitignore {
         util::ensure_workspace_gitignore(root)?;
         if args.ignore_config {
@@ -259,7 +259,7 @@ fn cmd_init_interactive(root: &Path, output: &Output, args: InitArgs) -> Result<
     let cancelled = || anyhow::anyhow!("Setup cancelled.");
 
     let mut cfg = config::load(root)?;
-    util::ensure_oav_dir(root)?;
+    util::prepare_workspace(root)?;
     if cfg.manage_gitignore {
         util::ensure_workspace_gitignore(root)?;
         if args.ignore_config {
@@ -378,7 +378,7 @@ fn cmd_init_interactive(root: &Path, output: &Output, args: InitArgs) -> Result<
 
 fn cmd_validate(root: &Path, output: &Output, args: ValidateArgs) -> Result<()> {
     let mut cfg = config::load(root)?;
-    util::ensure_oav_dir(root)?;
+    util::prepare_workspace(root)?;
     if cfg.manage_gitignore {
         util::ensure_workspace_gitignore(root)?;
     }

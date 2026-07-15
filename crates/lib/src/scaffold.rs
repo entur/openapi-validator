@@ -12,6 +12,37 @@ pub const GITIGNORE_HEADER: &str = "# openapi-validator";
 /// Standard workspace entry: ignore the whole `.oav/` directory tree.
 pub const WORKSPACE_GITIGNORE_ENTRIES: &[&str] = &[".oav/"];
 
+/// Relative path of the compose file the pipeline's compile phase runs against.
+pub const DOCKER_COMPOSE_FILE: &str = ".oav/docker-compose.yaml";
+
+/// Directories the pipeline expects to exist under the workspace root.
+pub const RUNTIME_DIRS: &[&str] = &[
+    ".oav/configs",
+    ".oav/generated",
+    ".oav/reports/lint",
+    ".oav/reports/generate/server",
+    ".oav/reports/generate/client",
+    ".oav/reports/compile/server",
+    ".oav/reports/compile/client",
+];
+
+const DOCKER_COMPOSE_YAML: &str = include_str!("../assets/docker-compose.yaml");
+
+/// Prepare the `.oav/` workspace: create the runtime directory tree and write
+/// the docker-compose file if missing. Idempotent; an existing compose file is
+/// never overwritten.
+pub fn prepare_workspace(root: &Path) -> Result<()> {
+    ensure_dirs(root, RUNTIME_DIRS)?;
+
+    let compose_path = root.join(DOCKER_COMPOSE_FILE);
+    if !compose_path.exists() {
+        fs::write(&compose_path, DOCKER_COMPOSE_YAML)
+            .with_context(|| format!("failed to write {}", compose_path.display()))?;
+    }
+
+    Ok(())
+}
+
 /// Create each directory in `dirs` (relative to `root`) using `create_dir_all`.
 pub fn ensure_dirs(root: &Path, dirs: &[&str]) -> Result<()> {
     for dir in dirs {
@@ -290,5 +321,46 @@ mod tests {
         let content = fs::read_to_string(tmp.path().join(".gitignore")).unwrap();
         assert_eq!(content.matches(GITIGNORE_HEADER).count(), 1);
         assert_eq!(content.matches(".oav/").count(), 1);
+    }
+
+    // --- prepare_workspace ---
+
+    #[test]
+    fn prepare_workspace_creates_runtime_dirs() {
+        let tmp = tempfile::tempdir().unwrap();
+        prepare_workspace(tmp.path()).unwrap();
+        for dir in RUNTIME_DIRS {
+            assert!(tmp.path().join(dir).is_dir(), "{dir} not created");
+        }
+    }
+
+    #[test]
+    fn prepare_workspace_writes_compose_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        prepare_workspace(tmp.path()).unwrap();
+        let content = fs::read_to_string(tmp.path().join(DOCKER_COMPOSE_FILE)).unwrap();
+        assert!(content.contains("build-spring"));
+        assert!(content.contains("build-client-typescript-axios"));
+    }
+
+    #[test]
+    fn prepare_workspace_preserves_existing_compose() {
+        let tmp = tempfile::tempdir().unwrap();
+        let compose = tmp.path().join(DOCKER_COMPOSE_FILE);
+        fs::create_dir_all(compose.parent().unwrap()).unwrap();
+        fs::write(&compose, "custom content").unwrap();
+
+        prepare_workspace(tmp.path()).unwrap();
+
+        let content = fs::read_to_string(&compose).unwrap();
+        assert_eq!(content, "custom content");
+    }
+
+    #[test]
+    fn prepare_workspace_is_idempotent() {
+        let tmp = tempfile::tempdir().unwrap();
+        prepare_workspace(tmp.path()).unwrap();
+        prepare_workspace(tmp.path()).unwrap();
+        assert!(tmp.path().join(DOCKER_COMPOSE_FILE).is_file());
     }
 }

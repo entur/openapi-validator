@@ -307,7 +307,7 @@ fn generated_code_exists_on_host() {
     };
 
     // Pipeline needs the .oav directory tree to exist.
-    lazyoav::scaffold::ensure_oav_dirs(dir.path()).unwrap();
+    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
 
     let input = PipelineInput {
         config: cfg,
@@ -353,7 +353,7 @@ fn report_json_persisted_to_disk() {
     };
 
     // Ensure report directory exists.
-    lazyoav::scaffold::ensure_oav_dirs(dir.path()).unwrap();
+    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
 
     let input = PipelineInput {
         config: cfg,
@@ -391,7 +391,7 @@ fn log_files_written_for_phases() {
         ..Config::default()
     };
 
-    lazyoav::scaffold::ensure_oav_dirs(dir.path()).unwrap();
+    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
 
     let input = PipelineInput {
         config: cfg,
@@ -421,7 +421,7 @@ fn log_files_written_for_phases() {
 #[ignore]
 fn custom_generator_runs_via_openapi_cli() {
     let (dir, spec_path) = setup_workdir();
-    lazyoav::scaffold::ensure_oav_dirs(dir.path()).unwrap();
+    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
 
     let custom_defs = vec![lazyoav::custom::CustomGeneratorDef {
         name: "custom-go".into(),

@@ -5,25 +5,11 @@ use std::path::Path;
 
 pub use oav_lib::scaffold::{
     GITIGNORE_HEADER, OAV_DIR, add_gitignore_entries, ensure_workspace_gitignore,
-    remove_gitignore_entries,
+    prepare_workspace, remove_gitignore_entries,
 };
 
-pub fn ensure_oav_dir(root: &Path) -> Result<()> {
-    oav_lib::scaffold::ensure_dirs(root, &[OAV_DIR])
-}
-
 pub fn prepare_runtime_dirs(root: &Path) -> Result<()> {
-    oav_lib::scaffold::ensure_dirs(
-        root,
-        &[
-            ".oav/reports/lint",
-            ".oav/reports/generate/server",
-            ".oav/reports/generate/client",
-            ".oav/reports/compile/server",
-            ".oav/reports/compile/client",
-            ".oav/generated",
-        ],
-    )?;
+    oav_lib::scaffold::prepare_workspace(root)?;
     fs::write(root.join(".oav/status.tsv"), "").context("Failed to create .oav/status.tsv")?;
     Ok(())
 }

@@ -121,7 +121,7 @@ fn load_from_cwd(app: &mut App) {
     };
 
     // Scaffold .oav/ directories early — warn but don't abort on failure.
-    if let Err(e) = scaffold::ensure_oav_dirs(&cwd) {
+    if let Err(e) = scaffold::prepare_workspace(&cwd) {
         eprintln!("warning: failed to scaffold .oav/ dirs: {e}");
     }
 
@@ -152,7 +152,7 @@ fn load_from_cwd(app: &mut App) {
 
     // Manage .gitignore if enabled.
     if cfg.manage_gitignore
-        && let Err(e) = scaffold::manage_gitignore(&cwd)
+        && let Err(e) = scaffold::ensure_workspace_gitignore(&cwd)
     {
         eprintln!("warning: failed to manage .gitignore: {e}");
     }

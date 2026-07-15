@@ -176,7 +176,7 @@ pub fn builtin_compile_command(
     scope: &str,
 ) -> Result<DockerStep> {
     let service = compile_service_name(generator, scope);
-    let compose_file = root.join(".oav/docker-compose.yaml");
+    let compose_file = root.join(crate::scaffold::DOCKER_COMPOSE_FILE);
     let project_dir = root.join(".oav");
 
     let args = vec![
