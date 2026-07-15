@@ -18,7 +18,29 @@ pub fn extract_assets(root: &Path, assets: &Dir) -> Result<()> {
     let target = root.join(OAV_DIR);
     fs::create_dir_all(&target).context("Failed to create .oav directory")?;
     write_assets(&target, assets)?;
+    write_generator_references(&target)?;
     Ok(())
+}
+
+/// Write the embedded default generator configs to `.oav/generators/{scope}/{name}.yaml`
+/// as editable references. Existing files are left untouched.
+fn write_generator_references(target: &Path) -> Result<()> {
+    for def in builtin_generator_defs() {
+        let dir = target.join("generators").join(def.scope);
+        fs::create_dir_all(&dir).with_context(|| format!("Failed to create {}", dir.display()))?;
+        let dest = dir.join(format!("{}.yaml", def.name));
+        if !dest.exists() {
+            fs::write(&dest, def.config_yaml)
+                .with_context(|| format!("Failed to write {}", dest.display()))?;
+        }
+    }
+    Ok(())
+}
+
+fn builtin_generator_defs() -> impl Iterator<Item = &'static oav_lib::generators::GeneratorDef> {
+    oav_lib::generators::builtin_server_generators()
+        .iter()
+        .chain(oav_lib::generators::builtin_client_generators())
 }
 
 fn write_assets(target: &Path, dir: &Dir) -> Result<()> {
@@ -108,7 +130,7 @@ fn select_spec_from_candidates(candidates: Vec<String>, quiet: bool) -> Result<O
 /// Compare on-disk generator configs against embedded defaults.
 /// Returns relative paths (e.g. `generators/server/spring.yaml`) for any files
 /// that differ from the embedded version or exist on disk but not in embedded assets.
-pub fn find_modified_generator_configs(root: &Path, assets: &Dir) -> Vec<String> {
+pub fn find_modified_generator_configs(root: &Path) -> Vec<String> {
     let oav_dir = root.join(OAV_DIR);
     let generators_dir = oav_dir.join("generators");
     if !generators_dir.exists() {
@@ -118,8 +140,16 @@ pub fn find_modified_generator_configs(root: &Path, assets: &Dir) -> Vec<String>
     let mut modified = Vec::new();
     let mut embedded_paths = std::collections::HashSet::new();
 
-    // Check embedded generator files against on-disk versions
-    collect_embedded_generator_diffs(&oav_dir, assets, &mut modified, &mut embedded_paths);
+    // Check embedded generator configs against on-disk versions
+    for def in builtin_generator_defs() {
+        let rel = format!("generators/{}/{}.yaml", def.scope, def.name);
+        embedded_paths.insert(rel.clone());
+        if let Ok(disk_content) = fs::read(oav_dir.join(&rel))
+            && disk_content != def.config_yaml.as_bytes()
+        {
+            modified.push(rel);
+        }
+    }
 
     // Find on-disk files with no embedded counterpart (user-created configs)
     if let Ok(walker) = fs::read_dir(&generators_dir) {
@@ -128,34 +158,6 @@ pub fn find_modified_generator_configs(root: &Path, assets: &Dir) -> Vec<String>
 
     modified.sort();
     modified
-}
-
-fn collect_embedded_generator_diffs(
-    oav_dir: &Path,
-    dir: &Dir,
-    modified: &mut Vec<String>,
-    embedded_paths: &mut std::collections::HashSet<String>,
-) {
-    for entry in dir.entries() {
-        match entry {
-            DirEntry::Dir(child) => {
-                collect_embedded_generator_diffs(oav_dir, child, modified, embedded_paths);
-            }
-            DirEntry::File(file) => {
-                let rel = file.path().to_string_lossy().to_string();
-                if !rel.starts_with("generators/") {
-                    continue;
-                }
-                embedded_paths.insert(rel.clone());
-                let disk_path = oav_dir.join(file.path());
-                if let Ok(disk_content) = fs::read(&disk_path)
-                    && disk_content != file.contents()
-                {
-                    modified.push(rel);
-                }
-            }
-        }
-    }
 }
 
 fn collect_extra_files(

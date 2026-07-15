@@ -879,7 +879,7 @@ fn cmd_clean(root: &Path, output: &Output, nuke: bool, yes: bool) -> Result<()> 
 }
 
 fn warn_modified_configs(root: &Path, output: &Output) {
-    let modified = util::find_modified_generator_configs(root, &ASSETS);
+    let modified = util::find_modified_generator_configs(root);
     if modified.is_empty() {
         return;
     }
