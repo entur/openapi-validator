@@ -1,0 +1,25 @@
+[package]
+name = "oav-gui"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Desktop GUI for linting, validating, and editing OpenAPI specs"
+publish = false
+
+[[bin]]
+name = "oav-gui"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+oav-lib = { path = "../../lib", features = ["fetch"] }
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+walkdir = "2.5"

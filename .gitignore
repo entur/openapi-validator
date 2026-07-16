@@ -1,6 +1,11 @@
 # Rust
 /target/
 
+# GUI frontend
+crates/gui/node_modules/
+crates/gui/dist/
+crates/gui/src-tauri/gen/
+
 # Logs
 *.log
 

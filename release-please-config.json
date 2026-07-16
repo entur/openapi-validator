@@ -3,7 +3,9 @@
   "release-type": "rust",
   "bump-minor-pre-major": true,
   "bootstrap-sha": "a31edc079d0f794c49db5c06087664de2bec3ae6",
-  "plugins": ["cargo-workspace"],
+  "plugins": [
+    "cargo-workspace"
+  ],
   "packages": {
     "crates/lib": {
       "component": "lib"
@@ -13,6 +15,10 @@
     },
     "crates/tui": {
       "component": "tui",
+      "release-as": "0.1.0"
+    },
+    "crates/gui/src-tauri": {
+      "component": "gui",
       "release-as": "0.1.0"
     }
   }

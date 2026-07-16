@@ -1,0 +1,279 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+}
+
+body {
+  background: #16161e;
+  color: #d5d6db;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1a1b26;
+  border-bottom: 1px solid #2a2b3a;
+}
+
+.toolbar .spacer {
+  flex: 1;
+}
+
+button {
+  background: #2a2b3a;
+  color: #d5d6db;
+  border: 1px solid #3b3d52;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #3b3d52;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.run {
+  background: #1f4732;
+  border-color: #2e6b4a;
+}
+
+button.cancel {
+  background: #58252b;
+  border-color: #7d3540;
+}
+
+select,
+input[type="text"] {
+  background: #1f2029;
+  color: #d5d6db;
+  border: 1px solid #3b3d52;
+  border-radius: 4px;
+  padding: 4px 6px;
+  max-width: 340px;
+}
+
+.docker-dot.good {
+  color: #6fd08c;
+}
+
+.docker-dot.bad {
+  color: #e06c75;
+}
+
+.banner {
+  background: #58252b;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: pre-wrap;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 230px 1fr 420px;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  background: #1a1b26;
+  border-right: 1px solid #2a2b3a;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.sidebar.empty {
+  color: #565a6e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar section {
+  margin-bottom: 16px;
+}
+
+.sidebar h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7982a9;
+  margin-bottom: 6px;
+}
+
+.sidebar label {
+  display: block;
+  padding: 2px 0;
+}
+
+.generator-list {
+  list-style: none;
+  padding: 0;
+}
+
+.generator-list em {
+  color: #7982a9;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.editor.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #565a6e;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #1a1b26;
+  border-bottom: 1px solid #2a2b3a;
+}
+
+.editor-header .filename {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #9aa5ce;
+}
+
+.pipeline-panel {
+  display: flex;
+  flex-direction: column;
+  background: #1a1b26;
+  border-left: 1px solid #2a2b3a;
+  min-height: 0;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #2a2b3a;
+}
+
+.tabs button {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 8px;
+}
+
+.tabs button.active {
+  background: #2a2b3a;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.phase-list {
+  list-style: none;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2a2b3a;
+  max-height: 40%;
+  overflow-y: auto;
+}
+
+.log {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  color: #9aa5ce;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.lint-table,
+.results {
+  overflow: auto;
+  padding: 8px;
+  flex: 1;
+}
+
+.lint-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.lint-table th,
+.lint-table td {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid #2a2b3a;
+  vertical-align: top;
+}
+
+.sev-error td:nth-child(2) {
+  color: #e06c75;
+}
+
+.sev-warning td:nth-child(2) {
+  color: #e5c07b;
+}
+
+.results h4 {
+  margin: 10px 0 4px;
+  color: #7982a9;
+}
+
+.step-list,
+.file-list {
+  list-style: none;
+  padding: 0;
+}
+
+.step-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.file-list {
+  margin-top: 8px;
+  border-top: 1px solid #2a2b3a;
+  padding-top: 8px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+}
+
+.file-list a {
+  color: #7aa2f7;
+  cursor: pointer;
+}
+
+.muted {
+  color: #565a6e;
+}
