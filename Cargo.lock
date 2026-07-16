@@ -1099,7 +1099,6 @@ dependencies = [
  "serde_json",
  "shell-words",
  "tempfile",
- "ureq",
  "walkdir",
  "yaml_serde",
 ]
@@ -1115,6 +1114,7 @@ dependencies = [
  "serde_json",
  "shell-words",
  "tempfile",
+ "ureq",
  "walkdir",
  "yaml_serde",
 ]

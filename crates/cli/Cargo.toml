@@ -16,7 +16,7 @@ name = "oav"
 path = "src/bin/oav.rs"
 
 [dependencies]
-oav-lib = { path = "../lib", features = ["clap"] }
+oav-lib = { path = "../lib", features = ["clap", "fetch"] }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
@@ -28,7 +28,6 @@ owo-colors = "4.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 shell-words = "1.1"
-ureq = "3"
 yaml_serde = "0.10"
 walkdir = "2.5"
 

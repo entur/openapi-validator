@@ -86,7 +86,6 @@ fn set_script_permissions(path: &Path) -> Result<()> {
 
 // Spec discovery
 
-pub use oav_lib::spec::looks_like_openapi;
 pub use oav_lib::spec::normalize_spec_path;
 
 pub fn discover_spec(root: &Path, quiet: bool, max_depth: usize) -> Result<Option<String>> {

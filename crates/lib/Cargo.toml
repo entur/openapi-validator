@@ -10,6 +10,7 @@ publish = false
 
 [features]
 clap = ["dep:clap"]
+fetch = ["dep:ureq"]
 
 [dependencies]
 anyhow = "1.0"
@@ -19,6 +20,7 @@ walkdir = "2.5"
 yaml_serde = "0.10"
 clap = { version = "4.5", features = ["derive"], optional = true }
 shell-words = "1.1"
+ureq = { version = "3", optional = true }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

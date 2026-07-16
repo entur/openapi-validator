@@ -1,6 +1,8 @@
 pub mod config;
 pub mod custom;
 pub mod docker;
+#[cfg(feature = "fetch")]
+pub mod fetch;
 pub mod fix;
 pub mod generators;
 pub mod log_parser;
