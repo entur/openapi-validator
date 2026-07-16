@@ -3,9 +3,12 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::de::{self, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+use crate::custom::CustomGeneratorDef;
+use crate::generators;
 
 pub const CONFIG_FILE: &str = ".oavc";
 
@@ -198,6 +201,111 @@ pub fn write(root: &Path, config: &Config) -> Result<()> {
     Ok(())
 }
 
+// ── Validation ───────────────────────────────────────────────────────
+
+fn validate_structure(config: &Config) -> Result<()> {
+    if config.docker_timeout == 0 {
+        bail!("docker_timeout must be greater than 0");
+    }
+    if config.search_depth == 0 {
+        bail!("search_depth must be greater than 0");
+    }
+    if let Jobs::Fixed(0) = config.jobs {
+        bail!("jobs must be \"auto\" or a positive integer");
+    }
+    Ok(())
+}
+
+/// Strict validation: structural problems and unknown generator names both fail.
+pub fn validate(config: &Config, custom: &[CustomGeneratorDef]) -> Result<()> {
+    validate_structure(config)?;
+    let server_owned = generators::all_server_names(custom);
+    let client_owned = generators::all_client_names(custom);
+    let all_server: Vec<&str> = server_owned.iter().map(|s| s.as_str()).collect();
+    let all_client: Vec<&str> = client_owned.iter().map(|s| s.as_str()).collect();
+    validate_generators("server", &config.server_generators, &all_server)?;
+    validate_generators("client", &config.client_generators, &all_client)?;
+    Ok(())
+}
+
+/// Non-fatal check run before a pipeline run proceeds.
+///
+/// Structural problems (bad timeout, depth, or job count) still bail, since
+/// those break the pipeline outright. Unknown generator names and stale
+/// generator overrides only produce warnings: the pipeline falls back to
+/// running unknown generators bare via `-g`.
+pub fn validate_for_run(config: &Config, custom: &[CustomGeneratorDef]) -> Result<Vec<String>> {
+    validate_structure(config)?;
+    let server_owned = generators::all_server_names(custom);
+    let client_owned = generators::all_client_names(custom);
+    let all_server: Vec<&str> = server_owned.iter().map(|s| s.as_str()).collect();
+    let all_client: Vec<&str> = client_owned.iter().map(|s| s.as_str()).collect();
+
+    let mut warnings = unknown_generator_warnings("server", &config.server_generators, &all_server);
+    warnings.extend(unknown_generator_warnings(
+        "client",
+        &config.client_generators,
+        &all_client,
+    ));
+    warnings.extend(override_warnings(config, &all_server, &all_client));
+    Ok(warnings)
+}
+
+fn unknown_generator_warnings(
+    scope: &str,
+    generators: &[String],
+    supported: &[&str],
+) -> Vec<String> {
+    generators
+        .iter()
+        .map(|g| g.trim())
+        .filter(|name| !name.is_empty() && !supported.contains(name))
+        .map(|name| {
+            format!("Unknown {scope} generator '{name}' — no built-in or custom config available")
+        })
+        .collect()
+}
+
+/// Warn about `generator_overrides` keys that no selected (or known) generator uses.
+fn override_warnings(config: &Config, all_server: &[&str], all_client: &[&str]) -> Vec<String> {
+    let mut warnings = Vec::new();
+    for key in config.generator_overrides.keys() {
+        let in_server = if config.server_generators.is_empty() {
+            all_server.contains(&key.as_str())
+        } else {
+            config.server_generators.iter().any(|g| g == key)
+        };
+        let in_client = if config.client_generators.is_empty() {
+            all_client.contains(&key.as_str())
+        } else {
+            config.client_generators.iter().any(|g| g == key)
+        };
+        if !in_server && !in_client {
+            warnings.push(format!(
+                "Config override for '{key}' but it's not in server_generators or client_generators"
+            ));
+        }
+    }
+    warnings
+}
+
+/// Fail if any name in `generators` is not in `supported`.
+pub fn validate_generators(scope: &str, generators: &[String], supported: &[&str]) -> Result<()> {
+    for generator in generators {
+        let name = generator.trim();
+        if name.is_empty() {
+            continue;
+        }
+        if !supported.contains(&name) {
+            bail!(
+                "Unsupported {scope} generator: '{name}'. Valid options: {}",
+                supported.join(", ")
+            );
+        }
+    }
+    Ok(())
+}
+
 /// Accept both scalar strings and lists per action in the `keys` config map.
 ///
 /// Lets users write either form in `.oavc`:
@@ -336,5 +444,118 @@ mod tests {
         cfg.keys.insert("scroll_down".into(), vec!["j".into()]);
         let yaml = yaml_serde::to_string(&cfg).expect("should serialize");
         assert!(yaml.contains("keys:"), "expected `keys:` in:\n{yaml}");
+    }
+
+    #[test]
+    fn validate_default_config_passes() {
+        assert!(validate(&Config::default(), &[]).is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_zero_docker_timeout() {
+        let cfg = Config {
+            docker_timeout: 0,
+            ..Config::default()
+        };
+        let err = validate(&cfg, &[]).unwrap_err();
+        assert!(err.to_string().contains("docker_timeout"));
+    }
+
+    #[test]
+    fn validate_rejects_zero_search_depth() {
+        let cfg = Config {
+            search_depth: 0,
+            ..Config::default()
+        };
+        assert!(validate(&cfg, &[]).is_err());
+    }
+
+    #[test]
+    fn validate_rejects_zero_jobs() {
+        let cfg = Config {
+            jobs: Jobs::Fixed(0),
+            ..Config::default()
+        };
+        assert!(validate(&cfg, &[]).is_err());
+    }
+
+    #[test]
+    fn validate_rejects_unknown_generator() {
+        let cfg = Config {
+            server_generators: vec!["nope".into()],
+            ..Config::default()
+        };
+        let err = validate(&cfg, &[]).unwrap_err();
+        assert!(err.to_string().contains("Unsupported server generator"));
+    }
+
+    #[test]
+    fn validate_accepts_custom_generator() {
+        let custom = vec![CustomGeneratorDef {
+            name: "my-gen".into(),
+            scope: "server".into(),
+            generate: crate::custom::GenerateBlock {
+                image: "img".into(),
+                command: "cmd".into(),
+            },
+            compile: None,
+        }];
+        let cfg = Config {
+            server_generators: vec!["my-gen".into()],
+            ..Config::default()
+        };
+        assert!(validate(&cfg, &custom).is_ok());
+    }
+
+    #[test]
+    fn validate_for_run_warns_on_unknown_generator() {
+        let cfg = Config {
+            client_generators: vec!["nope".into()],
+            ..Config::default()
+        };
+        let warnings = validate_for_run(&cfg, &[]).unwrap();
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("Unknown client generator 'nope'"));
+    }
+
+    #[test]
+    fn validate_for_run_still_bails_on_structural_error() {
+        let cfg = Config {
+            docker_timeout: 0,
+            ..Config::default()
+        };
+        assert!(validate_for_run(&cfg, &[]).is_err());
+    }
+
+    #[test]
+    fn validate_for_run_warns_on_stale_override() {
+        let cfg = Config {
+            server_generators: vec!["spring".into()],
+            generator_overrides: HashMap::from([(
+                "aspnetcore".to_string(),
+                "./aspnetcore.yaml".to_string(),
+            )]),
+            ..Config::default()
+        };
+        let warnings = validate_for_run(&cfg, &[]).unwrap();
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("Config override for 'aspnetcore'"));
+    }
+
+    #[test]
+    fn validate_for_run_accepts_override_for_known_generator_when_lists_empty() {
+        let mut cfg = Config::default();
+        cfg.generator_overrides
+            .insert("spring".into(), "./spring.yaml".into());
+        let warnings = validate_for_run(&cfg, &[]).unwrap();
+        assert!(warnings.is_empty(), "unexpected warnings: {warnings:?}");
+    }
+
+    #[test]
+    fn validate_generators_bails_with_valid_options() {
+        let err = validate_generators("server", &["bogus".to_string()], &["spring"]).unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("Unsupported server generator: 'bogus'"));
+        assert!(msg.contains("spring"));
     }
 }

@@ -1,4 +1,11 @@
+use serde::Serialize;
+
+use crate::custom::CustomGeneratorDef;
+
 /// A built-in generator definition.
+///
+/// Serializable so frontends can expose the catalog directly (e.g. over IPC).
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct GeneratorDef {
     pub name: &'static str,
     pub scope: &'static str,
@@ -109,12 +116,37 @@ pub fn find_builtin(name: &str, scope: &str) -> Option<&'static GeneratorDef> {
         .find(|g| g.name == name)
 }
 
+/// All built-in generators, server first, then client.
+pub fn builtin_generators() -> impl Iterator<Item = &'static GeneratorDef> {
+    SERVER_GENERATORS.iter().chain(CLIENT_GENERATORS.iter())
+}
+
 pub fn server_names() -> Vec<&'static str> {
     SERVER_GENERATORS.iter().map(|g| g.name).collect()
 }
 
 pub fn client_names() -> Vec<&'static str> {
     CLIENT_GENERATORS.iter().map(|g| g.name).collect()
+}
+
+/// Built-in plus custom server generator names.
+pub fn all_server_names(custom: &[CustomGeneratorDef]) -> Vec<String> {
+    let mut names: Vec<String> = SERVER_GENERATORS
+        .iter()
+        .map(|g| g.name.to_string())
+        .collect();
+    names.extend(crate::custom::server_names(custom));
+    names
+}
+
+/// Built-in plus custom client generator names.
+pub fn all_client_names(custom: &[CustomGeneratorDef]) -> Vec<String> {
+    let mut names: Vec<String> = CLIENT_GENERATORS
+        .iter()
+        .map(|g| g.name.to_string())
+        .collect();
+    names.extend(crate::custom::client_names(custom));
+    names
 }
 
 #[cfg(test)]
@@ -180,5 +212,51 @@ mod tests {
         assert_eq!(names.len(), 8);
         assert!(names.contains(&"typescript-axios"));
         assert!(names.contains(&"java"));
+    }
+
+    #[test]
+    fn builtin_generators_yields_all_scopes() {
+        assert_eq!(builtin_generators().count(), 14);
+    }
+
+    #[test]
+    fn generator_def_serializes_to_json() {
+        let def = find_builtin("spring", "server").unwrap();
+        let json = serde_json::to_value(def).unwrap();
+        assert_eq!(json["name"], "spring");
+        assert_eq!(json["scope"], "server");
+        assert!(json["config_yaml"].as_str().unwrap().contains("spring"));
+    }
+
+    fn custom_def(name: &str, scope: &str) -> CustomGeneratorDef {
+        CustomGeneratorDef {
+            name: name.to_string(),
+            scope: scope.to_string(),
+            generate: crate::custom::GenerateBlock {
+                image: "img".to_string(),
+                command: "cmd".to_string(),
+            },
+            compile: None,
+        }
+    }
+
+    #[test]
+    fn all_server_names_includes_custom() {
+        let custom = vec![
+            custom_def("my-server", "server"),
+            custom_def("my-client", "client"),
+        ];
+        let names = all_server_names(&custom);
+        assert!(names.contains(&"spring".to_string()));
+        assert!(names.contains(&"my-server".to_string()));
+        assert!(!names.contains(&"my-client".to_string()));
+    }
+
+    #[test]
+    fn all_client_names_includes_custom() {
+        let custom = vec![custom_def("my-client", "client")];
+        let names = all_client_names(&custom);
+        assert!(names.contains(&"java".to_string()));
+        assert!(names.contains(&"my-client".to_string()));
     }
 }

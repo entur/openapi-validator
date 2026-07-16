@@ -25,7 +25,7 @@ pub fn extract_assets(root: &Path, assets: &Dir) -> Result<()> {
 /// Write the embedded default generator configs to `.oav/generators/{scope}/{name}.yaml`
 /// as editable references. Existing files are left untouched.
 fn write_generator_references(target: &Path) -> Result<()> {
-    for def in builtin_generator_defs() {
+    for def in oav_lib::generators::builtin_generators() {
         let dir = target.join("generators").join(def.scope);
         fs::create_dir_all(&dir).with_context(|| format!("Failed to create {}", dir.display()))?;
         let dest = dir.join(format!("{}.yaml", def.name));
@@ -35,12 +35,6 @@ fn write_generator_references(target: &Path) -> Result<()> {
         }
     }
     Ok(())
-}
-
-fn builtin_generator_defs() -> impl Iterator<Item = &'static oav_lib::generators::GeneratorDef> {
-    oav_lib::generators::builtin_server_generators()
-        .iter()
-        .chain(oav_lib::generators::builtin_client_generators())
 }
 
 fn write_assets(target: &Path, dir: &Dir) -> Result<()> {
@@ -141,7 +135,7 @@ pub fn find_modified_generator_configs(root: &Path) -> Vec<String> {
     let mut embedded_paths = std::collections::HashSet::new();
 
     // Check embedded generator configs against on-disk versions
-    for def in builtin_generator_defs() {
+    for def in oav_lib::generators::builtin_generators() {
         let rel = format!("generators/{}/{}.yaml", def.scope, def.name);
         embedded_paths.insert(rel.clone());
         if let Ok(disk_content) = fs::read(oav_dir.join(&rel))
