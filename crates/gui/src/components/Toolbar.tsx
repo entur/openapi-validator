@@ -1,3 +1,10 @@
+import { Logo } from "@entur/menu";
+import { Contrast, StatusBadge } from "@entur/layout";
+import { PrimaryButton, NegativeButton, SecondaryButton, TertiaryButton } from "@entur/button";
+import { Dropdown } from "@entur/dropdown";
+import { FolderIcon, ExternalIcon } from "@entur/icons";
+import { useMediaQuery } from "../hooks";
+
 interface Props {
   root: string | null;
   specs: string[];
@@ -11,51 +18,64 @@ interface Props {
   onCancel: () => void;
 }
 
+/**
+ * Entur logo that adapts to window width:
+ * narrow → logo only, medium → "Entur OAV", wide → full product name.
+ * Breakpoints follow the Entur tokens (--breakpoints-large / -extra-large).
+ */
+function ResponsiveLogo() {
+  const medium = useMediaQuery("(min-width: 50rem)");
+  const large = useMediaQuery("(min-width: 75rem)");
+  const productName = large ? "OpenAPI Validator" : medium ? "OAV" : undefined;
+  return <Logo productName={productName} size="small" className="toolbar__logo" />;
+}
+
 export default function Toolbar(props: Props) {
-  const folderLabel = props.root ? props.root.split("/").pop() : "Open Folder…";
+  const specItems = props.specs.map((s) => ({ value: s, label: s }));
+  if (props.specPath && !props.specs.includes(props.specPath)) {
+    specItems.push({ value: props.specPath, label: props.specPath });
+  }
+  const folderName = props.root?.split("/").pop();
+
   return (
-    <header className="toolbar">
-      <button onClick={props.onOpenFolder} title={props.root ?? undefined}>
-        📁 {folderLabel}
-      </button>
-      <button onClick={props.onOpenUrl} disabled={!props.root}>
-        🌐 Open URL…
-      </button>
-      <select
-        value={props.specPath ?? ""}
-        onChange={(e) => props.onSelectSpec(e.target.value)}
-        disabled={props.specs.length === 0}
-      >
-        {props.specs.length === 0 && <option value="">no specs found</option>}
-        {props.specPath && !props.specs.includes(props.specPath) && (
-          <option value={props.specPath}>{props.specPath}</option>
-        )}
-        {props.specs.map((s) => (
-          <option key={s} value={s}>
-            {s}
-          </option>
-        ))}
-      </select>
-      <div className="spacer" />
-      <span
-        className={`docker-dot ${props.dockerError ? "bad" : "good"}`}
-        title={props.dockerError ?? "Docker available"}
-      >
-        ● Docker
-      </span>
+    <Contrast as="header" className="toolbar">
+      <ResponsiveLogo />
+      <SecondaryButton onClick={props.onOpenFolder} title={props.root ?? undefined}>
+        <FolderIcon aria-hidden="true" /> {folderName ?? "Open folder…"}
+      </SecondaryButton>
+      <TertiaryButton onClick={props.onOpenUrl} disabled={!props.root}>
+        <ExternalIcon aria-hidden="true" /> Open URL…
+      </TertiaryButton>
+      <div className="toolbar__spec">
+        <Dropdown
+          label="Spec"
+          items={specItems}
+          selectedItem={
+            props.specPath ? { value: props.specPath, label: props.specPath } : null
+          }
+          onChange={(item) => {
+            if (item) props.onSelectSpec(item.value);
+          }}
+          disabled={specItems.length === 0}
+          labelClearSelectedItem="Clear selection"
+        />
+      </div>
+      <div className="toolbar__spacer" />
+      <StatusBadge variant={props.dockerError ? "negative" : "success"}>
+        <span title={props.dockerError ?? "Docker available"}>Docker</span>
+      </StatusBadge>
       {props.running ? (
-        <button className="cancel" onClick={props.onCancel}>
-          ■ Cancel
-        </button>
+        <NegativeButton onClick={props.onCancel}>
+          Cancel
+        </NegativeButton>
       ) : (
-        <button
-          className="run"
+        <PrimaryButton
           onClick={props.onRun}
           disabled={!props.specPath || props.dockerError !== null}
         >
-          ▶ Validate
-        </button>
+          Validate
+        </PrimaryButton>
       )}
-    </header>
+    </Contrast>
   );
 }

@@ -1,3 +1,6 @@
+import { Checkbox, Fieldset, SegmentedControl, SegmentedChoice, Switch } from "@entur/form";
+import { NativeDropdown } from "@entur/dropdown";
+import { Heading5 } from "@entur/typography";
 import type { Catalog, Config, Linter, Mode } from "../types";
 
 interface Props {
@@ -22,89 +25,76 @@ export default function ConfigPanel({ config, catalog, onChange }: Props) {
   };
 
   const generatorList = (scope: "server" | "client") => (
-    <ul className="generator-list">
-      {names(scope).map((name) => (
-        <li key={`${scope}/${name}`}>
-          <label>
-            <input
-              type="checkbox"
-              checked={config[
-                scope === "server" ? "server_generators" : "client_generators"
-              ].includes(name)}
-              onChange={() => toggle(scope, name)}
-            />
+    <Fieldset label={`${scope === "server" ? "Server" : "Client"} generators`}>
+      <div className="sidebar__generators">
+        {names(scope).map((name) => (
+          <Checkbox
+            key={`${scope}/${name}`}
+            checked={config[
+              scope === "server" ? "server_generators" : "client_generators"
+            ].includes(name)}
+            onChange={() => toggle(scope, name)}
+          >
             {name}
-            {catalog.custom.some((c) => c.name === name && c.scope === scope) && (
-              <em> (custom)</em>
-            )}
-          </label>
-        </li>
-      ))}
-    </ul>
+            {catalog.custom.some((c) => c.name === name && c.scope === scope) &&
+              " (custom)"}
+          </Checkbox>
+        ))}
+      </div>
+    </Fieldset>
   );
 
   return (
-    <aside className="sidebar">
-      <section>
-        <h3>Pipeline</h3>
-        <label>
-          Mode{" "}
-          <select
-            value={config.mode}
-            onChange={(e) => onChange({ ...config, mode: e.target.value as Mode })}
-          >
-            <option value="server">server</option>
-            <option value="client">client</option>
-            <option value="both">both</option>
-          </select>
-        </label>
-        <label>
-          Linter{" "}
-          <select
-            value={config.linter}
-            onChange={(e) => onChange({ ...config, linter: e.target.value as Linter })}
-          >
-            <option value="spectral">spectral</option>
-            <option value="redocly">redocly</option>
-            <option value="none">none</option>
-          </select>
-        </label>
-        <label>
-          <input
-            type="checkbox"
+    <aside className="sidebar" aria-label="Pipeline configuration">
+      <section className="sidebar__section">
+        <Heading5 as="h2">Pipeline</Heading5>
+        <SegmentedControl
+          label="Mode"
+          value={config.mode}
+          onChange={(value) => value && onChange({ ...config, mode: value as Mode })}
+        >
+          <SegmentedChoice value="server">Server</SegmentedChoice>
+          <SegmentedChoice value="client">Client</SegmentedChoice>
+          <SegmentedChoice value="both">Both</SegmentedChoice>
+        </SegmentedControl>
+        <NativeDropdown
+          label="Linter"
+          items={[
+            { value: "spectral", label: "Spectral" },
+            { value: "redocly", label: "Redocly" },
+            { value: "none", label: "None" },
+          ]}
+          selectedItem={{ value: config.linter, label: config.linter }}
+          onChange={(item) =>
+            item && onChange({ ...config, linter: item.value as Linter })
+          }
+        />
+        <div className="sidebar__switches">
+          <Switch
             checked={config.lint}
             onChange={(e) => onChange({ ...config, lint: e.target.checked })}
-          />
-          Lint
-        </label>
-        <label>
-          <input
-            type="checkbox"
+          >
+            Lint
+          </Switch>
+          <Switch
             checked={config.generate}
             onChange={(e) => onChange({ ...config, generate: e.target.checked })}
-          />
-          Generate
-        </label>
-        <label>
-          <input
-            type="checkbox"
+          >
+            Generate
+          </Switch>
+          <Switch
             checked={config.compile}
             onChange={(e) => onChange({ ...config, compile: e.target.checked })}
-          />
-          Compile
-        </label>
+          >
+            Compile
+          </Switch>
+        </div>
       </section>
       {(config.mode === "server" || config.mode === "both") && (
-        <section>
-          <h3>Server generators</h3>
-          {generatorList("server")}
-        </section>
+        <section className="sidebar__section">{generatorList("server")}</section>
       )}
       {(config.mode === "client" || config.mode === "both") && (
-        <section>
-          <h3>Client generators</h3>
-          {generatorList("client")}
-        </section>
+        <section className="sidebar__section">{generatorList("client")}</section>
       )}
     </aside>
   );

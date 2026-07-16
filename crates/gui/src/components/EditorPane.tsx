@@ -1,11 +1,16 @@
 import { useEffect, useRef } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import type * as monacoNs from "monaco-editor";
+import { SecondaryButton, TertiaryButton } from "@entur/button";
+import { BackArrowIcon, SaveIcon } from "@entur/icons";
+import { Label } from "@entur/typography";
+import { Tag } from "@entur/layout";
 import type { LintError } from "../types";
 import type { OpenFile } from "../App";
 
 interface Props {
   file: OpenFile | null;
+  colorMode: "light" | "dark";
   lintErrors: LintError[];
   onSave: (content: string) => void;
   onBackToSpec?: () => void;
@@ -29,7 +34,13 @@ const severityMap: Record<LintError["severity"], monacoNs.MarkerSeverity | 8> = 
   hint: 1,
 };
 
-export default function EditorPane({ file, lintErrors, onSave, onBackToSpec }: Props) {
+export default function EditorPane({
+  file,
+  colorMode,
+  lintErrors,
+  onSave,
+  onBackToSpec,
+}: Props) {
   const editorRef = useRef<monacoNs.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof monacoNs | null>(null);
   const onSaveRef = useRef(onSave);
@@ -65,28 +76,38 @@ export default function EditorPane({ file, lintErrors, onSave, onBackToSpec }: P
   }, [lintErrors, file?.path]);
 
   if (!file) {
-    return <main className="editor empty">No file open</main>;
+    return (
+      <main id="main-content" className="editor editor--empty">
+        <Label>Open a folder to start editing a spec</Label>
+      </main>
+    );
   }
 
   return (
-    <main className="editor">
-      <div className="editor-header">
-        <span className="filename">
+    <main id="main-content" className="editor">
+      <div className="editor__header">
+        <span className="editor__filename" title={file.path}>
           {file.path}
-          {file.readOnly && " (read-only)"}
         </span>
-        {onBackToSpec && <button onClick={onBackToSpec}>← Back to spec</button>}
+        {file.readOnly && <Tag>read-only</Tag>}
+        {onBackToSpec && (
+          <TertiaryButton onClick={onBackToSpec}>
+            <BackArrowIcon aria-hidden="true" /> Back to spec
+          </TertiaryButton>
+        )}
         {!file.readOnly && (
-          <button onClick={() => editorRef.current && onSave(editorRef.current.getValue())}>
-            Save (⌘S)
-          </button>
+          <SecondaryButton
+            onClick={() => editorRef.current && onSave(editorRef.current.getValue())}
+          >
+            <SaveIcon aria-hidden="true" /> Save
+          </SecondaryButton>
         )}
       </div>
       <Editor
         path={file.path}
         language={languageFor(file.path)}
         value={file.content}
-        theme="vs-dark"
+        theme={colorMode === "dark" ? "vs-dark" : "vs"}
         options={{
           readOnly: file.readOnly,
           minimap: { enabled: false },

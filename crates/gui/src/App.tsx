@@ -1,18 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { SkipToContent } from "@entur/a11y";
+import { BannerAlertBox } from "@entur/alert";
 import * as api from "./api";
 import type {
   Catalog,
   Config,
+  FixProposal,
   LintError,
   PipelineEvent,
   ValidateReport,
 } from "./types";
 import { phaseKey } from "./types";
+import { useColorMode } from "./hooks";
 import Toolbar from "./components/Toolbar";
 import ConfigPanel from "./components/ConfigPanel";
 import EditorPane from "./components/EditorPane";
 import PipelinePanel from "./components/PipelinePanel";
+import FixModal from "./components/FixModal";
 
 export interface PhaseStatus {
   key: string;
@@ -28,6 +33,7 @@ export interface OpenFile {
 const MAX_LOG_LINES = 5000;
 
 export default function App() {
+  const colorMode = useColorMode();
   const [root, setRoot] = useState<string | null>(null);
   const [specs, setSpecs] = useState<string[]>([]);
   const [specPath, setSpecPath] = useState<string | null>(null);
@@ -41,6 +47,7 @@ export default function App() {
   const [lintErrors, setLintErrors] = useState<LintError[]>([]);
   const [report, setReport] = useState<ValidateReport | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
+  const [proposal, setProposal] = useState<FixProposal | null>(null);
 
   const showError = useCallback((e: unknown) => {
     setBanner(String(e));
@@ -214,26 +221,30 @@ export default function App() {
     async (error: LintError) => {
       if (!root || !specPath) return;
       try {
-        const proposal = await api.proposeFix(root, specPath, error);
-        if (!proposal) {
+        const found = await api.proposeFix(root, specPath, error);
+        if (!found) {
           setBanner(`No automatic fix available for rule '${error.rule}'`);
           return;
         }
-        const preview = [
-          ...proposal.context_before,
-          ...proposal.inserted.map((l) => `+ ${l}`),
-          ...proposal.context_after,
-        ].join("\n");
-        if (window.confirm(`${proposal.description}\n\n${preview}\n\nApply?`)) {
-          await api.applyFix(root, specPath, proposal);
-          await openSpec(root, specPath);
-        }
+        setProposal(found);
       } catch (e) {
         showError(e);
       }
     },
-    [root, specPath, openSpec, showError],
+    [root, specPath, showError],
   );
+
+  const handleApplyFix = useCallback(async () => {
+    if (!root || !specPath || !proposal) return;
+    try {
+      await api.applyFix(root, specPath, proposal);
+      setProposal(null);
+      await openSpec(root, specPath);
+    } catch (e) {
+      setProposal(null);
+      showError(e);
+    }
+  }, [root, specPath, proposal, openSpec, showError]);
 
   // Re-check docker when the compile toggle changes.
   useEffect(() => {
@@ -246,6 +257,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <SkipToContent>Skip to editor</SkipToContent>
       <Toolbar
         root={root}
         specs={specs}
@@ -259,18 +271,23 @@ export default function App() {
         onCancel={handleCancel}
       />
       {banner && (
-        <div className="banner" onClick={() => setBanner(null)}>
+        <BannerAlertBox
+          variant="negative"
+          closable
+          onClose={() => setBanner(null)}
+        >
           {banner}
-        </div>
+        </BannerAlertBox>
       )}
-      <div className="body">
+      <div className="app__body">
         {config && catalog ? (
           <ConfigPanel config={config} catalog={catalog} onChange={updateConfig} />
         ) : (
-          <aside className="sidebar empty">Open a folder to begin</aside>
+          <aside className="sidebar sidebar--empty">Open a folder to begin</aside>
         )}
         <EditorPane
           file={file}
+          colorMode={colorMode}
           lintErrors={file && !file.readOnly ? lintErrors : []}
           onSave={handleSaveFile}
           onBackToSpec={file?.readOnly ? handleBackToSpec : undefined}
@@ -288,6 +305,11 @@ export default function App() {
           }
         />
       </div>
+      <FixModal
+        proposal={proposal}
+        onApply={handleApplyFix}
+        onDismiss={() => setProposal(null)}
+      />
     </div>
   );
 }
