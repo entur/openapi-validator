@@ -43,7 +43,15 @@ export default function Toolbar(props: Props) {
       <SecondaryButton onClick={props.onOpenFolder} title={props.root ?? undefined}>
         <FolderIcon aria-hidden="true" /> {folderName ?? "Open folder…"}
       </SecondaryButton>
-      <SecondaryButton onClick={props.onOpenUrl} disabled={!props.root}>
+      <SecondaryButton
+        onClick={props.onOpenUrl}
+        disabled={!props.root}
+        title={
+          props.root
+            ? "Download a spec from a URL into this workspace"
+            : "Open a folder first — the spec is downloaded into the workspace"
+        }
+      >
         <ExternalIcon aria-hidden="true" /> Open URL…
       </SecondaryButton>
       <div className="toolbar__spec">

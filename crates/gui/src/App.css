@@ -217,3 +217,9 @@ body {
   max-height: 20rem;
   overflow: auto;
 }
+
+/* URL modal */
+
+.url-modal__actions {
+  margin-block-start: var(--space-default);
+}

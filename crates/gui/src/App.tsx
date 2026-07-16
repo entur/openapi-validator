@@ -18,6 +18,7 @@ import ConfigPanel from "./components/ConfigPanel";
 import EditorPane from "./components/EditorPane";
 import PipelinePanel from "./components/PipelinePanel";
 import FixModal from "./components/FixModal";
+import UrlModal from "./components/UrlModal";
 
 export interface PhaseStatus {
   key: string;
@@ -48,6 +49,7 @@ export default function App() {
   const [report, setReport] = useState<ValidateReport | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
   const [proposal, setProposal] = useState<FixProposal | null>(null);
+  const [urlModalOpen, setUrlModalOpen] = useState(false);
 
   const showError = useCallback((e: unknown) => {
     setBanner(String(e));
@@ -102,18 +104,16 @@ export default function App() {
     if (typeof dir === "string") await loadWorkspace(dir);
   }, [loadWorkspace]);
 
-  const handleOpenUrl = useCallback(async () => {
-    if (!root) return;
-    const url = window.prompt("Spec URL (http/https):");
-    if (!url) return;
-    try {
+  const handleFetchUrl = useCallback(
+    async (url: string) => {
+      if (!root) return;
       const fetched = await api.fetchSpecUrl(root, url);
       setSpecs((prev) => (prev.includes(fetched) ? prev : [...prev, fetched]));
       await openSpec(root, fetched);
-    } catch (e) {
-      showError(e);
-    }
-  }, [root, openSpec, showError]);
+      setUrlModalOpen(false);
+    },
+    [root, openSpec],
+  );
 
   const updateConfig = useCallback(
     async (next: Config) => {
@@ -265,7 +265,7 @@ export default function App() {
         running={running}
         dockerError={dockerError}
         onOpenFolder={handleOpenFolder}
-        onOpenUrl={handleOpenUrl}
+        onOpenUrl={() => setUrlModalOpen(true)}
         onSelectSpec={(p) => root && openSpec(root, p)}
         onRun={handleRun}
         onCancel={handleCancel}
@@ -309,6 +309,11 @@ export default function App() {
         proposal={proposal}
         onApply={handleApplyFix}
         onDismiss={() => setProposal(null)}
+      />
+      <UrlModal
+        open={urlModalOpen}
+        onDismiss={() => setUrlModalOpen(false)}
+        onFetch={handleFetchUrl}
       />
     </div>
   );
