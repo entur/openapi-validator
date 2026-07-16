@@ -1,6 +1,6 @@
 import { Logo } from "@entur/menu";
 import { Contrast, StatusBadge } from "@entur/layout";
-import { PrimaryButton, NegativeButton, SecondaryButton, TertiaryButton } from "@entur/button";
+import { PrimaryButton, NegativeButton, SecondaryButton } from "@entur/button";
 import { Dropdown } from "@entur/dropdown";
 import { FolderIcon, ExternalIcon } from "@entur/icons";
 import { useMediaQuery } from "../hooks";
@@ -43,9 +43,9 @@ export default function Toolbar(props: Props) {
       <SecondaryButton onClick={props.onOpenFolder} title={props.root ?? undefined}>
         <FolderIcon aria-hidden="true" /> {folderName ?? "Open folder…"}
       </SecondaryButton>
-      <TertiaryButton onClick={props.onOpenUrl} disabled={!props.root}>
+      <SecondaryButton onClick={props.onOpenUrl} disabled={!props.root}>
         <ExternalIcon aria-hidden="true" /> Open URL…
-      </TertiaryButton>
+      </SecondaryButton>
       <div className="toolbar__spec">
         <Dropdown
           label="Spec"

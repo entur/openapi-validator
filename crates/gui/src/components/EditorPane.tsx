@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import type * as monacoNs from "monaco-editor";
-import { SecondaryButton, TertiaryButton } from "@entur/button";
+import { SecondaryButton } from "@entur/button";
 import { BackArrowIcon, SaveIcon } from "@entur/icons";
 import { Label } from "@entur/typography";
 import { Tag } from "@entur/layout";
@@ -91,9 +91,9 @@ export default function EditorPane({
         </span>
         {file.readOnly && <Tag>read-only</Tag>}
         {onBackToSpec && (
-          <TertiaryButton onClick={onBackToSpec}>
+          <SecondaryButton onClick={onBackToSpec}>
             <BackArrowIcon aria-hidden="true" /> Back to spec
-          </TertiaryButton>
+          </SecondaryButton>
         )}
         {!file.readOnly && (
           <SecondaryButton

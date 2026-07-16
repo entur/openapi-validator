@@ -9,7 +9,7 @@ import {
   DataCell,
 } from "@entur/table";
 import { StatusBadge } from "@entur/layout";
-import { TertiaryButton } from "@entur/button";
+import { SecondaryButton } from "@entur/button";
 import { Loader } from "@entur/loader";
 import { Heading5, Link, Paragraph, SmallText } from "@entur/typography";
 import { VisuallyHidden } from "@entur/a11y";
@@ -122,9 +122,9 @@ export default function PipelinePanel(props: Props) {
                         <SmallText>{e.rule}</SmallText>
                       </DataCell>
                       <DataCell>
-                        <TertiaryButton onClick={() => props.onFix(e)}>
+                        <SecondaryButton onClick={() => props.onFix(e)}>
                           Fix
-                        </TertiaryButton>
+                        </SecondaryButton>
                       </DataCell>
                     </TableRow>
                   ))}
@@ -173,13 +173,13 @@ export default function PipelinePanel(props: Props) {
                               {s.scope}/{s.generator}
                             </StatusBadge>
                             {phase === "generate" && (
-                              <TertiaryButton
+                              <SecondaryButton
                                 onClick={() => browse(s.scope, s.generator)}
                               >
                                 {browsing === `${s.scope}/${s.generator}`
                                   ? "Hide files"
                                   : "Browse files"}
-                              </TertiaryButton>
+                              </SecondaryButton>
                             )}
                           </li>
                         ))}
