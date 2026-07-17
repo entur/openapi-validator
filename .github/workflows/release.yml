@@ -220,7 +220,7 @@ jobs:
             gh release upload "$tag" dist/"${prefix}-${version}"-* \
               --repo "${{ github.repository }}" --clobber
           done
-      - name: Update Homebrew formulas
+      - name: Update Homebrew formulas and casks
         shell: bash
         run: |
           for tag in $(echo '${{ needs.discover-tags.outputs.tags }}' | jq -r '.[]'); do
@@ -228,9 +228,11 @@ jobs:
             case "$tag" in
               cli-v*) formula=Formula/oav.rb; prefix=oav ;;
               tui-v*) formula=Formula/lazyoav.rb; prefix=lazyoav ;;
-              # No homebrew distribution for the GUI; installers are attached
-              # to the GitHub release instead.
-              gui-v*) continue ;;
+              # The GUI ships as a cask (app bundle in a dmg), not a formula.
+              gui-v*)
+                .github/scripts/update-cask.sh Casks/oav-gui.rb "$version" dist oav-gui
+                continue
+                ;;
             esac
             .github/scripts/update-formula.sh "$formula" "$version" dist "$prefix"
           done
@@ -239,9 +241,11 @@ jobs:
       - name: Open PR with updated formulas
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          add-paths: Formula/
-          commit-message: "chore: update homebrew formula checksums"
-          title: "chore: update homebrew formula checksums"
+          add-paths: |
+            Formula/
+            Casks/
+          commit-message: "chore: update homebrew package checksums"
+          title: "chore: update homebrew package checksums"
           body: "Automated update after ${{ needs.discover-tags.outputs.tags }} published."
           branch: update-homebrew-formulas
           delete-branch: true
