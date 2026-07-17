@@ -3,7 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/entur/openapi-validator?filter=cli-*&style=flat-square&label=release)](https://github.com/entur/openapi-validator/releases?q=cli-)
 [![Rust](https://img.shields.io/badge/rust-1.92%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org)
 [![Homebrew](https://img.shields.io/github/v/release/entur/openapi-validator?filter=cli-*&style=flat-square&label=homebrew&color=fbb040)](https://github.com/entur/openapi-validator#homebrew)
-[![License](https://img.shields.io/badge/license-EUPL--1.2-blue?style=flat-square)](LICENSE.md)
+[![License](https://img.shields.io/badge/license-EUPL--1.2-blue?style=flat-square)](../../LICENSE.md)
 [![Issues](https://img.shields.io/github/issues/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/issues)
 [![Pull Requests](https://img.shields.io/github/issues-pr/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/pulls)
 [![Last Commit](https://img.shields.io/github/last-commit/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/commits/main)

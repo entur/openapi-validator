@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tags:
-        description: 'JSON array of tags to publish, for example ["cli-v0.7.1","tui-v0.1.0"]'
+        description: 'JSON array of tags to publish, for example ["cli-v0.7.1","gui-v0.1.0"]'
         required: false
         type: string
 
@@ -36,6 +36,8 @@ jobs:
       contents: read
     outputs:
       tags: ${{ steps.find.outputs.tags }}
+      bin_tags: ${{ steps.find.outputs.bin_tags }}
+      gui_tags: ${{ steps.find.outputs.gui_tags }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -47,20 +49,26 @@ jobs:
         run: |
           if [[ '${{ github.event_name }}' == 'workflow_dispatch' && '${{ inputs.tags }}' != '' ]]; then
             tags='${{ inputs.tags }}'
-            jq -e 'type == "array" and all(.[]; type == "string" and test("^(cli|tui)-v"))' <<< "$tags" > /dev/null
+            jq -e 'type == "array" and all(.[]; type == "string" and test("^(cli|tui|gui)-v"))' <<< "$tags" > /dev/null
           else
-            tags="$(git tag --points-at HEAD | awk '/^(cli|tui)-v/' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+            tags="$(git tag --points-at HEAD | awk '/^(cli|tui|gui)-v/' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
           fi
+          bin_tags="$(jq -c 'map(select(startswith("gui-v") | not))' <<< "$tags")"
+          gui_tags="$(jq -c 'map(select(startswith("gui-v")))' <<< "$tags")"
           echo "Found tags: ${tags}"
-          echo "tags=${tags}" >> "$GITHUB_OUTPUT"
+          {
+            echo "tags=${tags}"
+            echo "bin_tags=${bin_tags}"
+            echo "gui_tags=${gui_tags}"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: discover-tags
-    if: always() && needs.discover-tags.result == 'success' && needs.discover-tags.outputs.tags != '[]'
+    if: always() && needs.discover-tags.result == 'success' && needs.discover-tags.outputs.bin_tags != '[]'
     strategy:
       fail-fast: false
       matrix:
-        tag: ${{ fromJson(needs.discover-tags.outputs.tags) }}
+        tag: ${{ fromJson(needs.discover-tags.outputs.bin_tags) }}
         target:
           - { triple: aarch64-apple-darwin, os: macos-14 }
           - { triple: x86_64-apple-darwin, os: macos-14 }
@@ -110,9 +118,79 @@ jobs:
             *.tar.gz.sha256
           retention-days: 1
 
+  # The GUI is a Tauri app: the frontend must be built with npm and the
+  # binary bundled into platform installers (dmg/deb/rpm/AppImage) instead of
+  # a bare tarball, so it gets its own job. Bundles are unsigned; macOS users
+  # must right-click > Open (or clear the quarantine attribute) on first launch.
+  build-gui:
+    needs: discover-tags
+    if: always() && needs.discover-tags.result == 'success' && needs.discover-tags.outputs.gui_tags != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJson(needs.discover-tags.outputs.gui_tags) }}
+        target:
+          - { triple: aarch64-apple-darwin, os: macos-14, bundles: dmg }
+          - { triple: x86_64-apple-darwin, os: macos-14, bundles: dmg }
+          - { triple: x86_64-unknown-linux-gnu, os: ubuntu-24.04, bundles: "deb,rpm,appimage" }
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install Tauri system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev
+      - uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1.16.1
+        with:
+          target: ${{ matrix.target.triple }}
+          cache: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: crates/gui/package-lock.json
+      - run: npm ci
+        working-directory: crates/gui
+      - name: Build
+        working-directory: crates/gui
+        run: npx tauri build --target ${{ matrix.target.triple }} --bundles ${{ matrix.target.bundles }}
+      - name: Package
+        shell: bash
+        run: |
+          version="${{ matrix.tag }}"
+          version="${version#gui-v}"
+          triple="${{ matrix.target.triple }}"
+          bundle_dir="target/${triple}/release/bundle"
+
+          mkdir -p dist
+          shopt -s nullglob
+          for file in "${bundle_dir}"/dmg/*.dmg "${bundle_dir}"/deb/*.deb "${bundle_dir}"/rpm/*.rpm "${bundle_dir}"/appimage/*.AppImage; do
+            asset="oav-gui-${version}-${triple}.${file##*.}"
+            cp "$file" "dist/${asset}"
+            (cd dist && shasum -a 256 "${asset}" > "${asset}.sha256")
+          done
+
+          if [[ -z "$(ls -A dist)" ]]; then
+            echo "::error::no bundles produced under ${bundle_dir}"
+            exit 1
+          fi
+          ls -la dist
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: assets-${{ matrix.tag }}-${{ matrix.target.triple }}
+          path: dist/*
+          retention-days: 1
+
   publish:
-    needs: [discover-tags, build]
-    if: always() && needs.discover-tags.result == 'success' && needs.build.result == 'success' && needs.discover-tags.outputs.tags != '[]'
+    needs: [discover-tags, build, build-gui]
+    if: >-
+      always() && needs.discover-tags.result == 'success' &&
+      needs.discover-tags.outputs.tags != '[]' &&
+      contains(fromJson('["success", "skipped"]'), needs.build.result) &&
+      contains(fromJson('["success", "skipped"]'), needs.build-gui.result)
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -132,14 +210,17 @@ jobs:
         shell: bash
         run: |
           for tag in $(echo '${{ needs.discover-tags.outputs.tags }}' | jq -r '.[]'); do
+            version="${tag#*-v}"
             case "$tag" in
-              cli-v*) binary=oav ;;
-              tui-v*) binary=lazyoav ;;
+              cli-v*) prefix=oav ;;
+              tui-v*) prefix=lazyoav ;;
+              gui-v*) prefix=oav-gui ;;
             esac
-            gh release upload "$tag" dist/"${binary}"-*.tar.gz dist/"${binary}"-*.tar.gz.sha256 \
+            # Version-scoped glob so cli's oav-* never matches oav-gui-* assets.
+            gh release upload "$tag" dist/"${prefix}-${version}"-* \
               --repo "${{ github.repository }}" --clobber
           done
-      - name: Update Homebrew formulas
+      - name: Update Homebrew formulas and casks
         shell: bash
         run: |
           for tag in $(echo '${{ needs.discover-tags.outputs.tags }}' | jq -r '.[]'); do
@@ -147,6 +228,11 @@ jobs:
             case "$tag" in
               cli-v*) formula=Formula/oav.rb; prefix=oav ;;
               tui-v*) formula=Formula/lazyoav.rb; prefix=lazyoav ;;
+              # The GUI ships as a cask (app bundle in a dmg), not a formula.
+              gui-v*)
+                .github/scripts/update-cask.sh Casks/oav-gui.rb "$version" dist oav-gui
+                continue
+                ;;
             esac
             .github/scripts/update-formula.sh "$formula" "$version" dist "$prefix"
           done
@@ -155,9 +241,11 @@ jobs:
       - name: Open PR with updated formulas
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          add-paths: Formula/
-          commit-message: "chore: update homebrew formula checksums"
-          title: "chore: update homebrew formula checksums"
+          add-paths: |
+            Formula/
+            Casks/
+          commit-message: "chore: update homebrew package checksums"
+          title: "chore: update homebrew package checksums"
           body: "Automated update after ${{ needs.discover-tags.outputs.tags }} published."
           branch: update-homebrew-formulas
           delete-branch: true
