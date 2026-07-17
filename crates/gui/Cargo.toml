@@ -16,7 +16,7 @@ path = "src/main.rs"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-oav-lib = { path = "../../lib", features = ["fetch"] }
+oav-lib = { path = "../lib", features = ["fetch"] }
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

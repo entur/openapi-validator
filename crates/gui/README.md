@@ -34,16 +34,16 @@ Download an installer from the [releases page](https://github.com/entur/openapi-
 Requires Node 24+ and the Rust toolchain.
 
 ```bash
-cd crates/gui
+cd crates/gui/frontend
 npm ci
-npx tauri dev
+npm run tauri dev
 ```
 
 ## Build
 
 ```bash
-cd crates/gui
-npx tauri build
+cd crates/gui/frontend
+npm run tauri build
 ```
 
 Bundles land in `target/release/bundle/`.

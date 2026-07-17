@@ -17,7 +17,7 @@
       "component": "tui",
       "release-as": "0.1.0"
     },
-    "crates/gui/src-tauri": {
+    "crates/gui": {
       "component": "gui",
       "release-as": "0.1.0"
     }
