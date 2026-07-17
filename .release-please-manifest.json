@@ -2,5 +2,5 @@
   "crates/lib": "0.1.0",
   "crates/cli": "0.7.1",
   "crates/tui": "0.1.0",
-  "crates/gui/src-tauri": "0.1.0"
+  "crates/gui": "0.1.0"
 }

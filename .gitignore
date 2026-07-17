@@ -2,9 +2,9 @@
 /target/
 
 # GUI frontend
-crates/gui/node_modules/
-crates/gui/dist/
-crates/gui/src-tauri/gen/
+crates/gui/frontend/node_modules/
+crates/gui/frontend/dist/
+crates/gui/gen/
 
 # Logs
 *.log

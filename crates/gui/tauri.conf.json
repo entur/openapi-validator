@@ -3,10 +3,10 @@
   "productName": "OpenAPI Validator",
   "identifier": "org.entur.oav",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": { "script": "npm run dev", "cwd": "./frontend" },
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
-    "frontendDist": "../dist"
+    "beforeBuildCommand": { "script": "npm run build", "cwd": "./frontend" },
+    "frontendDist": "./frontend/dist"
   },
   "app": {
     "windows": [
