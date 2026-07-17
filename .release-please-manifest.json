@@ -1,6 +1,6 @@
 {
-  "crates/lib": "0.1.0",
-  "crates/cli": "0.7.1",
-  "crates/tui": "0.1.0",
+  "crates/lib": "0.2.0",
+  "crates/cli": "0.7.2",
+  "crates/tui": "0.1.1",
   "crates/gui": "0.1.0"
 }

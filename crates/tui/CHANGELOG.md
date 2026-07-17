@@ -2,6 +2,8 @@
 
 All notable changes to OpenAPI Validator TUI will be documented in this file.
 
+## [0.1.1](https://github.com/entur/openapi-validator/compare/tui-v0.1.0...tui-v0.1.1) (2026-07-17)
+
 ## 0.1.0 (2026-07-02)
 
 

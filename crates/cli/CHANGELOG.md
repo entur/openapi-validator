@@ -2,6 +2,8 @@
 
 All notable changes to OpenAPI Validator will be documented in this file.
 
+## [0.7.2](https://github.com/entur/openapi-validator/compare/cli-v0.7.1...cli-v0.7.2) (2026-07-17)
+
 ## [0.7.1](https://github.com/entur/openapi-validator/compare/cli-v0.7.0...cli-v0.7.1) (2026-07-02)
 
 
