@@ -3,7 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/entur/openapi-validator?filter=gui-*&style=flat-square&label=release)](https://github.com/entur/openapi-validator/releases?q=gui-)
 [![Rust](https://img.shields.io/badge/rust-1.92%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org)
 [![Homebrew](https://img.shields.io/github/v/release/entur/openapi-validator?filter=gui-*&style=flat-square&label=homebrew&color=fbb040)](https://github.com/entur/openapi-validator#install)
-[![License](https://img.shields.io/badge/license-EUPL--1.2-blue?style=flat-square)](LICENSE.md)
+[![License](https://img.shields.io/badge/license-EUPL--1.2-blue?style=flat-square)](../../LICENSE.md)
 
 Desktop app for linting, validating, and editing OpenAPI specs. Run the validation pipeline, browse lint diagnostics, and edit specs in a built-in editor. Built with Tauri and Entur's Linje design system.
 
