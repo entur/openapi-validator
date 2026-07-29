@@ -14,12 +14,10 @@
       "component": "cli"
     },
     "crates/tui": {
-      "component": "tui",
-      "release-as": "0.1.0"
+      "component": "tui"
     },
     "crates/gui": {
-      "component": "gui",
-      "release-as": "0.1.0"
+      "component": "gui"
     }
   }
 }
