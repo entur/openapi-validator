@@ -14,13 +14,19 @@ on:
 jobs:
   release-please:
     if: github.event_name == 'push'
-    uses: entur/gha-meta/.github/workflows/release.yml@v1
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       pull-requests: write
       issues: write
-    with:
-      release_type: manifest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
   # release-please creates tags via the GitHub API, which (per GitHub's
   # anti-recursion rule) would NOT trigger a separate tag-push-triggered
