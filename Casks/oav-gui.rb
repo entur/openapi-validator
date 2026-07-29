@@ -2,8 +2,8 @@ cask "oav-gui" do
   arch arm: "aarch64", intel: "x86_64"
 
   version "0.1.0"
-  sha256 arm:   "000000000000000000000000000000000000000000000000000000000000000a",
-         intel: "000000000000000000000000000000000000000000000000000000000000000b"
+  sha256 arm:   "1091c36dc9bc64a9bd113f14c5024f42da31fde48e0a819541fbcc2acd7b6c47",
+         intel: "3d1f36d4d8e77681cc78a68b0ce9fd07aa1fcf7420745827ec7ab89fedc0e4dc"
 
   # version and sha256 values are updated automatically by .github/workflows/release.yml on each gui release.
 
