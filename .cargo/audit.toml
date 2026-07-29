@@ -12,4 +12,39 @@ ignore = [
     # bincode 1.3.3 is considered complete by its authors and has no active CVEs.
     # We will remove this ignore when syntect drops the bincode 1.x dependency.
     "RUSTSEC-2025-0141",
+
+    # The gtk-rs GTK3 bindings (gtk, gtk-sys, gtk3-macros, gdk, gdk-sys, gdkx11,
+    # gdkx11-sys, gdkwayland-sys, atk, atk-sys) are pulled in transitively by
+    # tauri/wry's Linux backend (webkit2gtk, tao, muda), which still targets
+    # GTK3. gtk-rs has moved on to GTK4-only bindings and will not release
+    # further GTK3 updates. There is no fix until tauri-apps/wry migrates its
+    # Linux backend off gtk-rs 0.18.
+    "RUSTSEC-2024-0411", # gdkwayland-sys
+    "RUSTSEC-2024-0412", # gdk
+    "RUSTSEC-2024-0413", # atk
+    "RUSTSEC-2024-0414", # gdkx11-sys
+    "RUSTSEC-2024-0415", # gtk
+    "RUSTSEC-2024-0416", # atk-sys
+    "RUSTSEC-2024-0417", # gdkx11
+    "RUSTSEC-2024-0418", # gdk-sys
+    "RUSTSEC-2024-0419", # gtk3-macros
+    "RUSTSEC-2024-0420", # gtk-sys
+
+    # proc-macro-error is unmaintained; pulled in by gtk3-macros above.
+    "RUSTSEC-2024-0370",
+
+    # glib is pinned to 0.18.x by the gtk-rs GTK3 bindings above (latest is
+    # 0.22.x). The VariantStrIter unsoundness fix landed after 0.18 and cannot
+    # be pulled in without an upstream gtk-rs GTK3 release, which won't happen.
+    "RUSTSEC-2024-0429", # glib
+
+    # unic-ucd-ident/unic-ucd-version pull in unic-common, unic-char-property and
+    # unic-char-range. All are transitive via `urlpattern`, a dependency of
+    # tauri-utils (tauri core, not just the Linux backend). unic-* has had no
+    # release since 2019; there's no drop-in replacement tauri can swap to.
+    "RUSTSEC-2025-0098", # unic-ucd-version
+    "RUSTSEC-2025-0100", # unic-ucd-ident
+    "RUSTSEC-2025-0080", # unic-common
+    "RUSTSEC-2025-0081", # unic-char-property
+    "RUSTSEC-2025-0075", # unic-char-range
 ]
