@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/entur/openapi-validator/compare/gui-v0.1.0...gui-v0.1.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **gui:** bump brace-expansion to patch DoS advisory ([f86a3d5](https://github.com/entur/openapi-validator/commit/f86a3d5a4298a75e90eeecb1cacb691810acd678))
+
 ## [0.1.0](https://github.com/entur/openapi-validator/compare/gui-v0.1.0...gui-v0.1.0) (2026-07-17)
 
 
