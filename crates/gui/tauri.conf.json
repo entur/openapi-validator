@@ -3,9 +3,9 @@
   "productName": "OpenAPI Validator",
   "identifier": "org.entur.oav",
   "build": {
-    "beforeDevCommand": { "script": "npm run dev", "cwd": "./frontend" },
+    "beforeDevCommand": { "script": "pnpm dev", "cwd": "./frontend" },
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": { "script": "npm run build", "cwd": "./frontend" },
+    "beforeBuildCommand": { "script": "pnpm build", "cwd": "./frontend" },
     "frontendDist": "./frontend/dist"
   },
   "app": {
