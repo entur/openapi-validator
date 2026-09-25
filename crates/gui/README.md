@@ -31,7 +31,7 @@ Download an installer from the [releases page](https://github.com/entur/openapi-
 
 ## Development
 
-Requires Node 24+, pnpm 12+, and the Rust toolchain. pnpm is pinned via the `packageManager` field, so `corepack enable` gives you the right version. It enforces the `minimumReleaseAge` cooldown in `pnpm-workspace.yaml` and only runs the install scripts allowlisted under `pnpm.onlyBuiltDependencies`.
+Requires Node 24+, pnpm 12+, and the Rust toolchain. pnpm is pinned via the `packageManager` field, so `corepack enable` gives you the right version. Install scripts run only for dependencies allowlisted under `allowBuilds` in `pnpm-workspace.yaml`. That file also sets a `minimumReleaseAge` cooldown, which pnpm applies when it resolves dependencies (adding or updating a package, or regenerating the lockfile), not to `--frozen-lockfile` installs. CI separately fails if a dependency added to the lockfile was published less than 7 days ago.
 
 ```bash
 corepack enable
