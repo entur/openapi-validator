@@ -1,0 +1,7 @@
+# Approve install scripts only for the bundler that needs them.
+allowBuilds:
+  esbuild: true
+
+# Supply-chain cooldown: skip dependency versions published less than 7 days
+# (10080 min) ago when resolving. Does not affect frozen-lockfile installs.
+minimumReleaseAge: 10080

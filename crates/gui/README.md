@@ -31,19 +31,20 @@ Download an installer from the [releases page](https://github.com/entur/openapi-
 
 ## Development
 
-Requires Node 24+ and the Rust toolchain.
+Requires Node 24+, pnpm 12+, and the Rust toolchain. pnpm is pinned via the `packageManager` field, so `corepack enable` gives you the right version. It enforces the `minimumReleaseAge` cooldown in `pnpm-workspace.yaml` and only runs the install scripts allowlisted under `pnpm.onlyBuiltDependencies`.
 
 ```bash
+corepack enable
 cd crates/gui/frontend
-npm ci
-npm run tauri dev
+pnpm install --frozen-lockfile
+pnpm tauri dev
 ```
 
 ## Build
 
 ```bash
 cd crates/gui/frontend
-npm run tauri build
+pnpm tauri build
 ```
 
 Bundles land in `target/release/bundle/`.
