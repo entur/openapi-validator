@@ -1,3 +1,7 @@
+# Keep pnpm from self-managing its version, which writes a second YAML document
+# (packageManagerDependencies) that Dependabot parses as an empty lockfile.
+pmOnFail: ignore
+
 # Approve install scripts only for the bundler that needs them.
 allowBuilds:
   esbuild: true
