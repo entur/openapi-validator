@@ -59,6 +59,24 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
       - run: cargo test --workspace --all-features
 
+  # build.rs stubs frontend/dist, so the Rust jobs never compile the frontend.
+  frontend:
+    name: frontend build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      # pnpm version comes from the packageManager field in package.json.
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+        working-directory: crates/gui/frontend
+      - run: pnpm build
+        working-directory: crates/gui/frontend
+
   # Frozen-lockfile installs skip pnpm's minimumReleaseAge, so enforce the
   # release-age cooldown here on any dependency this PR adds to the lockfile.
   dependency-age:
