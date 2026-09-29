@@ -38,6 +38,15 @@ updates:
       semver-minor-days: 7
       semver-patch-days: 3
     groups:
+      # Linje packages depend on each other's majors, so bump them together.
+      entur-design-system:
+        patterns:
+          - "@entur/*"
       npm-dependencies:
         patterns:
           - "*"
+        exclude-patterns:
+          - "@entur/*"
+        update-types:
+          - minor
+          - patch
