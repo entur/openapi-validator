@@ -1,0 +1,30 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**/README.md"
+  schedule:
+    - cron: "0 3 * * MON"
+
+permissions:
+  contents: read
+
+jobs:
+  code-scan:
+    name: Code Scan
+    # Permissions must cover what the reusable workflow requests.
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+      packages: read
+      pull-requests: write
+      security-events: write
+    uses: entur/gha-security/.github/workflows/code-scan.yml@89ffce329b85b10d285defb50bb58c35227d4305 # v2.17.0
+    secrets: inherit
