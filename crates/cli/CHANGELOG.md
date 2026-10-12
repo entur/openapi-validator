@@ -2,6 +2,22 @@
 
 All notable changes to OpenAPI Validator will be documented in this file.
 
+## [0.8.0](https://github.com/entur/openapi-validator/compare/cli-v0.7.2...cli-v0.8.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* bundle TUI into oav and drop lazyoav binary
+
+### Features
+
+* bundle TUI into oav and drop lazyoav binary ([be13112](https://github.com/entur/openapi-validator/commit/be1311294461f66455b613b43606c7a2e4c1cef6))
+
+
+### Bug Fixes
+
+* **ci:** pass action inputs through env to avoid script injection ([ae9df4f](https://github.com/entur/openapi-validator/commit/ae9df4fe40264dbf443bb2d53ce6d6a7f33a8a88))
+
 ## [0.7.2](https://github.com/entur/openapi-validator/compare/cli-v0.7.1...cli-v0.7.2) (2026-07-17)
 
 ## [0.7.1](https://github.com/entur/openapi-validator/compare/cli-v0.7.0...cli-v0.7.1) (2026-07-02)
