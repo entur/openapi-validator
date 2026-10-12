@@ -68,7 +68,7 @@ runs:
       id: validate
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: bash "${{ github.action_path }}/validate.sh"
+      run: bash "$GITHUB_ACTION_PATH/validate.sh"
       env:
         INPUT_SPEC: ${{ inputs.spec }}
         INPUT_MODE: ${{ inputs.mode }}
@@ -86,7 +86,7 @@ runs:
       if: always()
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: bash "${{ github.action_path }}/summary.sh"
+      run: bash "$GITHUB_ACTION_PATH/summary.sh"
 
     - name: Upload reports
       if: always() && inputs.upload-reports == 'true'
@@ -99,4 +99,6 @@ runs:
     - name: Set exit code
       if: always()
       shell: bash
-      run: exit ${{ steps.validate.outputs.exit_code }}
+      env:
+        EXIT_CODE: ${{ steps.validate.outputs.exit_code }}
+      run: exit "${EXIT_CODE:-0}"

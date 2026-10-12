@@ -34,7 +34,7 @@ function addedSpecs() {
 }
 
 async function publishedAt({ name, version }) {
-  const url = `${REGISTRY}/${name.replace("/", "%2F")}`;
+  const url = `${REGISTRY}/${name.replaceAll("/", "%2F")}`;
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {

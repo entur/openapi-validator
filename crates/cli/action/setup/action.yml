@@ -22,12 +22,15 @@ runs:
     - name: Resolve version and target
       id: resolve
       shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_TOKEN: ${{ inputs.token }}
       run: |
-        version="${{ inputs.version }}"
+        version="$INPUT_VERSION"
         if [[ "$version" == "latest" ]]; then
           # This repo hosts both oav and oav-gui releases, so /releases/latest
           # could return either one. Find the newest release tagged for cli instead.
-          json="$(curl -fsSL -H "Authorization: token ${{ inputs.token }}" \
+          json="$(curl -fsSL -H "Authorization: token ${INPUT_TOKEN}" \
             "https://api.github.com/repos/entur/openapi-validator/releases?per_page=30")"
           tag="$(printf '%s' "$json" | awk -F\" '/"tag_name":/ { if ($4 ~ /^cli-v/) { print $4; exit } }')"
           if [[ -z "$tag" ]]; then
@@ -64,7 +67,7 @@ runs:
     - name: Install oav
       id: install
       shell: bash
-      run: bash "${{ github.action_path }}/install.sh"
+      run: bash "$GITHUB_ACTION_PATH/install.sh"
       env:
         INPUT_VERSION: ${{ steps.resolve.outputs.version }}
         INPUT_TARGET: ${{ steps.resolve.outputs.target }}
