@@ -2,6 +2,17 @@
 
 All notable changes to OpenAPI Validator TUI will be documented in this file.
 
+## [0.2.0](https://github.com/entur/openapi-validator/compare/tui-v0.1.1...tui-v0.2.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* bundle TUI into oav and drop lazyoav binary
+
+### Features
+
+* bundle TUI into oav and drop lazyoav binary ([be13112](https://github.com/entur/openapi-validator/commit/be1311294461f66455b613b43606c7a2e4c1cef6))
+
 ## [0.1.1](https://github.com/entur/openapi-validator/compare/tui-v0.1.0...tui-v0.1.1) (2026-07-17)
 
 ## 0.1.0 (2026-07-02)
