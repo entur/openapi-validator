@@ -5,7 +5,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 
 use crate::fix::FixProposal;
-use lazyoav::keys::{KeyAction, Keymap};
+use crate::keys::{KeyAction, Keymap};
 
 /// Draw the help overlay centered on the screen.
 pub fn draw_help_overlay(frame: &mut Frame, area: Rect, keymap: &Keymap) {

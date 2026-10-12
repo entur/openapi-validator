@@ -12,7 +12,12 @@ pub enum OutputFormat {
 }
 
 #[derive(Parser, Debug)]
-#[command(name = "oav", version, about = "OpenAPI Validator CLI")]
+#[command(
+    name = "oav",
+    version,
+    about = "OpenAPI Validator CLI",
+    long_about = "OpenAPI Validator CLI\n\nRun `oav` without a subcommand in a terminal to open the interactive TUI."
+)]
 pub struct Cli {
     /// Show full tool output (conflicts with -q and --output)
     #[arg(short, long, global = true, conflicts_with_all = ["quiet", "output"])]
@@ -27,7 +32,7 @@ pub struct Cli {
     #[arg(long, global = true, default_value = "human", conflicts_with_all = ["verbose", "quiet"])]
     pub output: OutputFormat,
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy)]

@@ -17,6 +17,8 @@ oav init --spec openapi/api.yaml
 oav validate
 ```
 
+Run `oav` with no subcommand in a terminal to open the interactive TUI (see [crates/tui](../tui/README.md)). Without a terminal, it prints help.
+
 ## Install
 
 ### Homebrew
@@ -50,6 +52,7 @@ cargo install --git https://github.com/entur/openapi-validator oav-cli
 
 | Command | Description |
 |---------|-------------|
+| `oav` | Open the interactive TUI |
 | `oav init` | Scaffold `.oav/` and `.oavc` (omit `--spec` for interactive wizard) |
 | `oav validate` | Run lint, generate, compile pipeline and write reports |
 | `oav config [get\|set\|edit\|print]` | Manage `.oavc` |

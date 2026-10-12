@@ -5,7 +5,7 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::Paragraph;
 
 use crate::app::{App, BrowserPanel, Panel, ScreenMode, StatusLevel, ViewMode};
-use lazyoav::keys::KeyAction;
+use crate::keys::KeyAction;
 
 use super::overlay;
 use super::panels;

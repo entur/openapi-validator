@@ -34,7 +34,7 @@ fi
 if [[ -n "${OAV_VERSION:-}" ]]; then
   version="${OAV_VERSION}"
 else
-  # This repo hosts both oav and lazyoav releases, so /releases/latest could
+  # This repo hosts both oav and oav-gui releases, so /releases/latest could
   # return either one. Find the newest release tagged for this component instead.
   json="$(curl -fsSL "${auth_header[@]}" "${api}/repos/${repo}/releases?per_page=30")"
   tag="$(printf '%s' "$json" | awk -F\" '/"tag_name":/ { if ($4 ~ /^cli-v/) { print $4; exit } }')"

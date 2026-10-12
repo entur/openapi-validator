@@ -7,14 +7,6 @@ license.workspace = true
 repository.workspace = true
 description = "A TUI for exploring, linting, and fixing OpenAPI specs interactively"
 
-[lib]
-name = "lazyoav"
-path = "src/lib.rs"
-
-[[bin]]
-name = "lazyoav"
-path = "src/main.rs"
-
 [dependencies]
 oav-lib = { path = "../lib" }
 anyhow = "1.0"

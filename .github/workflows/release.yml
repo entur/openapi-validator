@@ -55,9 +55,9 @@ jobs:
         run: |
           if [[ '${{ github.event_name }}' == 'workflow_dispatch' && '${{ inputs.tags }}' != '' ]]; then
             tags='${{ inputs.tags }}'
-            jq -e 'type == "array" and all(.[]; type == "string" and test("^(cli|tui|gui)-v"))' <<< "$tags" > /dev/null
+            jq -e 'type == "array" and all(.[]; type == "string" and test("^(cli|gui)-v"))' <<< "$tags" > /dev/null
           else
-            tags="$(git tag --points-at HEAD | awk '/^(cli|tui|gui)-v/' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+            tags="$(git tag --points-at HEAD | awk '/^(cli|gui)-v/' | jq -R -s -c 'split("\n") | map(select(length > 0))')"
           fi
           bin_tags="$(jq -c 'map(select(startswith("gui-v") | not))' <<< "$tags")"
           gui_tags="$(jq -c 'map(select(startswith("gui-v")))' <<< "$tags")"
@@ -90,7 +90,6 @@ jobs:
           tag="${{ matrix.tag }}"
           case "$tag" in
             cli-v*) crate=cli; binary=oav; version="${tag#cli-v}" ;;
-            tui-v*) crate=tui; binary=lazyoav; version="${tag#tui-v}" ;;
             *) echo "::error::unrecognized tag: $tag"; exit 1 ;;
           esac
           {
@@ -219,7 +218,6 @@ jobs:
             version="${tag#*-v}"
             case "$tag" in
               cli-v*) prefix=oav ;;
-              tui-v*) prefix=lazyoav ;;
               gui-v*) prefix=oav-gui ;;
             esac
             # Version-scoped glob so cli's oav-* never matches oav-gui-* assets.
@@ -233,7 +231,6 @@ jobs:
             version="${tag#*-v}"
             case "$tag" in
               cli-v*) formula=Formula/oav.rb; prefix=oav ;;
-              tui-v*) formula=Formula/lazyoav.rb; prefix=lazyoav ;;
               # The GUI ships as a cask (app bundle in a dmg), not a formula.
               gui-v*)
                 .github/scripts/update-cask.sh Casks/oav-gui.rb "$version" dist oav-gui

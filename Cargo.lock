@@ -2451,6 +2451,7 @@ dependencies = [
  "include_dir",
  "indicatif",
  "oav-lib",
+ "oav-tui",
  "owo-colors",
  "predicates",
  "serde",

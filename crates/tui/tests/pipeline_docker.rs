@@ -6,9 +6,9 @@
 use std::path::PathBuf;
 use std::sync::mpsc;
 
-use lazyoav::config::{Config, Linter, Mode};
-use lazyoav::docker::CancelToken;
-use lazyoav::pipeline::{PipelineEvent, PipelineInput, run_pipeline};
+use oav_tui::config::{Config, Linter, Mode};
+use oav_tui::docker::CancelToken;
+use oav_tui::pipeline::{PipelineEvent, PipelineInput, run_pipeline};
 
 /// Copy the bundled petstore spec into a temporary work directory.
 fn setup_workdir() -> (tempfile::TempDir, PathBuf) {
@@ -307,7 +307,7 @@ fn generated_code_exists_on_host() {
     };
 
     // Pipeline needs the .oav directory tree to exist.
-    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
+    oav_tui::scaffold::prepare_workspace(dir.path()).unwrap();
 
     let input = PipelineInput {
         config: cfg,
@@ -353,7 +353,7 @@ fn report_json_persisted_to_disk() {
     };
 
     // Ensure report directory exists.
-    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
+    oav_tui::scaffold::prepare_workspace(dir.path()).unwrap();
 
     let input = PipelineInput {
         config: cfg,
@@ -391,7 +391,7 @@ fn log_files_written_for_phases() {
         ..Config::default()
     };
 
-    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
+    oav_tui::scaffold::prepare_workspace(dir.path()).unwrap();
 
     let input = PipelineInput {
         config: cfg,
@@ -421,12 +421,12 @@ fn log_files_written_for_phases() {
 #[ignore]
 fn custom_generator_runs_via_openapi_cli() {
     let (dir, spec_path) = setup_workdir();
-    lazyoav::scaffold::prepare_workspace(dir.path()).unwrap();
+    oav_tui::scaffold::prepare_workspace(dir.path()).unwrap();
 
-    let custom_defs = vec![lazyoav::custom::CustomGeneratorDef {
+    let custom_defs = vec![oav_tui::custom::CustomGeneratorDef {
         name: "custom-go".into(),
         scope: "server".into(),
-        generate: lazyoav::custom::GenerateBlock {
+        generate: oav_tui::custom::GenerateBlock {
             image: "openapitools/openapi-generator-cli:v7.17.0".into(),
             command: "generate -i {spec} -g go-server -o /work/.oav/generated/server/custom-go"
                 .into(),
@@ -540,13 +540,13 @@ fn pipeline_events_ordering() {
     let lint_start_idx = events.iter().position(|e| {
         matches!(
             e,
-            PipelineEvent::PhaseStarted(lazyoav::pipeline::Phase::Lint)
+            PipelineEvent::PhaseStarted(oav_tui::pipeline::Phase::Lint)
         )
     });
     let gen_start_idx = events.iter().position(|e| {
         matches!(
             e,
-            PipelineEvent::PhaseStarted(lazyoav::pipeline::Phase::Generate { .. })
+            PipelineEvent::PhaseStarted(oav_tui::pipeline::Phase::Generate { .. })
         )
     });
     if let (Some(l), Some(g)) = (lint_start_idx, gen_start_idx) {

@@ -25,7 +25,7 @@ runs:
       run: |
         version="${{ inputs.version }}"
         if [[ "$version" == "latest" ]]; then
-          # This repo hosts both oav and lazyoav releases, so /releases/latest
+          # This repo hosts both oav and oav-gui releases, so /releases/latest
           # could return either one. Find the newest release tagged for cli instead.
           json="$(curl -fsSL -H "Authorization: token ${{ inputs.token }}" \
             "https://api.github.com/repos/entur/openapi-validator/releases?per_page=30")"

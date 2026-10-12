@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::mpsc;
 
+use crate::config::Config;
+use crate::custom::CustomGeneratorDef;
+use crate::docker::CancelToken;
 use crate::fix::FixProposal;
 use crate::highlight::HighlightEngine;
+use crate::keys::Keymap;
 use crate::log_parser::LintError;
+use crate::pipeline::{LintResult, Phase, PipelineEvent, ValidateReport};
 use crate::spec::SpecIndex;
-use lazyoav::config::Config;
-use lazyoav::custom::CustomGeneratorDef;
-use lazyoav::docker::CancelToken;
-use lazyoav::keys::Keymap;
-use lazyoav::pipeline::{LintResult, Phase, PipelineEvent, ValidateReport};
 
 use super::trace::{CompileError, TraceIndex};
 
@@ -582,7 +582,7 @@ fn phase_label(phase: &Phase) -> String {
 mod tests {
     use super::*;
     use crate::log_parser::Severity;
-    use lazyoav::pipeline::{LintResult, Phases, StepResult, Summary, ValidateReport};
+    use crate::pipeline::{LintResult, Phases, StepResult, Summary, ValidateReport};
 
     fn make_report(
         lint: Option<LintResult>,

@@ -18,7 +18,7 @@ pub const EXIT_VALIDATION_FAILURE: i32 = 1;
 pub const EXIT_INFRA_ERROR: i32 = 2;
 
 use anyhow::{Context, Result, bail};
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use include_dir::{Dir, include_dir};
 use std::env;
 use std::fs;
@@ -69,7 +69,11 @@ pub fn run() -> (OutputFormat, Result<()>) {
     };
     let output = Output::new(cli.verbose, cli.quiet, json, cli.color);
 
-    let result = match cli.command {
+    let Some(command) = cli.command else {
+        return (cli.output, cmd_default());
+    };
+
+    let result = match command {
         Commands::Init {
             spec,
             mode,
@@ -149,6 +153,19 @@ pub fn run() -> (OutputFormat, Result<()>) {
     };
 
     (cli.output, result)
+}
+
+/// Bare `oav`: open the TUI in an interactive terminal, otherwise print help.
+fn cmd_default() -> Result<()> {
+    #[cfg(feature = "tui")]
+    {
+        use std::io::IsTerminal;
+        if std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+            return oav_tui::run();
+        }
+    }
+    Cli::command().print_help()?;
+    Ok(())
 }
 
 fn cmd_init(root: &Path, output: &Output, args: InitArgs) -> Result<()> {

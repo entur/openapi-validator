@@ -1,12 +1,3 @@
-mod app;
-mod fix;
-mod highlight;
-#[allow(unused)]
-mod log_parser;
-#[allow(unused)]
-mod spec;
-mod ui;
-
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -19,15 +10,16 @@ use crossterm::terminal::{self, EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::Terminal;
 use ratatui::backend::CrosstermBackend;
 
-use app::diff::{DiffPanel, DiffViewState};
-use app::trace;
-use app::{App, BrowserPanel, Panel, PhaseStatus, StatusLevel, ViewMode};
-use lazyoav::config;
-use lazyoav::custom;
-use lazyoav::docker::{self, CancelToken};
-use lazyoav::keys::{KeyAction, KeyInput};
-use lazyoav::pipeline::{self, PipelineEvent, PipelineInput};
-use lazyoav::scaffold;
+use crate::app::diff::{DiffPanel, DiffViewState};
+use crate::app::trace;
+use crate::app::{self, App, BrowserPanel, Panel, PhaseStatus, StatusLevel, ViewMode};
+use crate::config;
+use crate::custom;
+use crate::docker::{self, CancelToken};
+use crate::keys::{KeyAction, KeyInput};
+use crate::pipeline::{self, PipelineEvent, PipelineInput};
+use crate::scaffold;
+use crate::{fix, log_parser, spec, ui};
 
 /// Action returned by `handle_key` to signal the run loop.
 enum Action {
@@ -35,13 +27,8 @@ enum Action {
     OpenEditor { path: PathBuf, line: usize },
 }
 
-fn main() -> Result<()> {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    if args.iter().any(|a| a == "--version" || a == "-V") {
-        println!("lazyoav {}", env!("CARGO_PKG_VERSION"));
-        return Ok(());
-    }
-
+/// Run the interactive TUI in the current working directory.
+pub fn run() -> Result<()> {
     // Ensure terminal is restored on panic.
     let original_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
@@ -50,7 +37,7 @@ fn main() -> Result<()> {
     }));
 
     let mut terminal = setup_terminal()?;
-    let result = run(&mut terminal);
+    let result = event_loop(&mut terminal);
     restore_terminal()?;
     result
 }
@@ -70,7 +57,7 @@ fn restore_terminal() -> Result<()> {
     Ok(())
 }
 
-fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
+fn event_loop(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
     let mut app = App::new();
     load_from_cwd(&mut app);
 
@@ -200,7 +187,7 @@ fn load_from_cwd(app: &mut App) {
 
     // Build keymap from config, surfacing warnings.
     if !cfg.keys.is_empty() {
-        let (keymap, key_warnings) = lazyoav::keys::Keymap::from_config(&cfg.keys);
+        let (keymap, key_warnings) = crate::keys::Keymap::from_config(&cfg.keys);
         app.keymap = keymap;
         if !key_warnings.is_empty() {
             app.set_status(key_warnings.join("; "), StatusLevel::Warn);
@@ -2029,7 +2016,7 @@ mod tests {
 
     /// Build a report with `n` generate steps (so phase_count == n).
     fn make_report_with_phases(n: usize) -> pipeline::ValidateReport {
-        use lazyoav::pipeline::{Phases, StepResult, Summary};
+        use crate::pipeline::{Phases, StepResult, Summary};
         let steps: Vec<StepResult> = (0..n)
             .map(|i| StepResult {
                 generator: format!("gen{i}"),
@@ -2056,7 +2043,7 @@ mod tests {
 
     /// Build a report with a lint phase so current_errors works.
     fn make_report_with_lint() -> pipeline::ValidateReport {
-        use lazyoav::pipeline::{LintResult, Phases, Summary};
+        use crate::pipeline::{LintResult, Phases, Summary};
         pipeline::ValidateReport {
             spec: "test.yaml".into(),
             mode: "both".into(),

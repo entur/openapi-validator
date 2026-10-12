@@ -1,52 +1,17 @@
 # OpenAPI Validator TUI
 
-[![GitHub Release](https://img.shields.io/github/v/release/entur/openapi-validator?filter=tui-*&style=flat-square&label=release)](https://github.com/entur/openapi-validator/releases?q=tui-)
-[![Rust](https://img.shields.io/badge/rust-1.92%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org)
-[![Homebrew](https://img.shields.io/github/v/release/entur/openapi-validator?filter=tui-*&style=flat-square&label=homebrew&color=fbb040)](https://github.com/entur/openapi-validator#homebrew)
-[![License](https://img.shields.io/badge/license-EUPL--1.2-blue?style=flat-square)](../../LICENSE.md)
-[![Issues](https://img.shields.io/github/issues/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/entur/openapi-validator?style=flat-square)](https://github.com/entur/openapi-validator/commits/main)
+Interactive terminal UI for linting, generating, and compiling OpenAPI specs. Explore validation results, browse generated code, compare diffs across runs, and edit specs, all powered by Docker and `.oavc` config.
 
-Interactive terminal UI for linting, generating, and compiling OpenAPI specs. Explore validation results, browse generated code, compare diffs across runs, and edit specs — all from a single TUI powered by Docker and `.oavc` config.
+This crate is a library. It ships inside the `oav` binary (see [crates/cli](../cli/README.md) for install).
 
 ## Quick start
 
 ```bash
 cd your-project/
-lazyoav
+oav
 ```
 
-Launches the TUI in the current directory. Reads `.oavc` for config and runs the lint/generate/compile pipeline interactively.
-
-## Install
-
-### Homebrew
-
-```bash
-brew tap entur/openapi-validator https://github.com/entur/openapi-validator
-brew install lazyoav
-```
-
-### Shell script
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/entur/openapi-validator/main/crates/tui/install.sh | bash
-```
-
-### Cargo
-
-```bash
-cargo install --git https://github.com/entur/openapi-validator oav-tui
-```
-
-### Uninstall
-
-| Method   | Command                          |
-|----------|----------------------------------|
-| Homebrew | `brew uninstall lazyoav`         |
-| Cargo    | `cargo uninstall lazyoav`        |
-| Manual   | `rm /usr/local/bin/lazyoav`      |
+Running `oav` without a subcommand in a terminal opens the TUI in the current directory. It reads `.oavc` for config and runs the lint/generate/compile pipeline interactively.
 
 ## Features
 
@@ -89,12 +54,6 @@ See the [CLI documentation](https://github.com/entur/openapi-validator/tree/main
 ## Requirements
 
 - Docker (for linting, generation, and compile steps)
-
-## Build
-
-```bash
-cargo build --release
-```
 
 ## Testing
 

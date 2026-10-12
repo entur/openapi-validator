@@ -15,8 +15,13 @@ path = "src/lib.rs"
 name = "oav"
 path = "src/bin/oav.rs"
 
+[features]
+default = ["tui"]
+tui = ["dep:oav-tui"]
+
 [dependencies]
 oav-lib = { path = "../lib", features = ["clap", "fetch"] }
+oav-tui = { path = "../tui", optional = true }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
