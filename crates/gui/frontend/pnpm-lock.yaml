@@ -9,50 +9,50 @@ importers:
   .:
     dependencies:
       '@entur/a11y':
-        specifier: ^0.4.0
-        version: 0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.4.1
+        version: 0.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/alert':
-        specifier: ^0.22.0
-        version: 0.22.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.22.1
+        version: 0.22.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/button':
-        specifier: ^5.2.0
-        version: 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^5.2.1
+        version: 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/dropdown':
-        specifier: ^9.3.0
-        version: 9.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^9.3.1
+        version: 9.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/form':
-        specifier: ^10.3.0
-        version: 10.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^10.3.1
+        version: 10.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/icons':
-        specifier: ^10.1.0
-        version: 10.1.0(react@19.3.1)
+        specifier: ^10.1.1
+        version: 10.1.1(react@19.3.1)
       '@entur/layout':
         specifier: ^5.0.1
-        version: 5.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 5.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/loader':
         specifier: ^0.9.0
-        version: 0.9.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 0.9.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/menu':
-        specifier: ^7.4.0
-        version: 7.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^7.4.1
+        version: 7.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/modal':
-        specifier: ^2.1.0
-        version: 2.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^2.1.1
+        version: 2.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/tab':
-        specifier: ^0.10.0
-        version: 0.10.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^0.10.1
+        version: 0.10.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/table':
-        specifier: ^5.2.0
-        version: 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: ^5.2.1
+        version: 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/tokens':
-        specifier: ^4.3.0
-        version: 4.3.0
+        specifier: ^4.3.1
+        version: 4.3.1
       '@entur/tooltip':
         specifier: ^6.0.4
-        version: 6.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 6.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@entur/typography':
         specifier: ^3.0.4
-        version: 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.57.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -97,106 +97,106 @@ packages:
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
 
-  '@entur/a11y@0.4.0':
-    resolution: {integrity: sha512-y5w1613gkW/Ds8XBb/cRcCBFJ9B71vU9tS/5VrHdovROjoMHcmFS4CWoOhtRyGegxthKGPPw+Lf1Tn81s4MD8A==}
+  '@entur/a11y@0.4.1':
+    resolution: {integrity: sha512-fjEk9HWpWTDvlLS085Gm3AXK6e36d6K6PCrKykfYRT4zaV9v9+bgzuehmo91liqVVwVJO92ut5DKRRbJ2w4SmA==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/alert@0.22.0':
-    resolution: {integrity: sha512-Yik6EtOKK5V+UvpjBKYZkR5OeOwDeOo4FY+9pJZh5x0juRkPt5ezEdkqsa2SeZVTub7DZEeKE+GNh2EY99VtsA==}
+  '@entur/alert@0.22.1':
+    resolution: {integrity: sha512-NSiN6rlU2R7JJ2Sa59jsoe5XuFZTMknTp961hVvitTGSBBKS205jU+Qxm5tne0P5StPqmxfSJxuWx0omu6UDUg==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/button@5.2.0':
-    resolution: {integrity: sha512-DO8zJF1AnoqP+MQ1bd+Nc7sIOvgBhvAWZc5pbRmsEUzNNnOEJgvk4Uva+bATamBwMSebrfaysEnegJN16vyipA==}
+  '@entur/button@5.2.1':
+    resolution: {integrity: sha512-V0M4zMLd3Aq3m4oj1iTqVJbwVTdpqvK2ibdtHQ0b1rnSOwxPBpRcYbPTLi9LMoUChCLBoi6ONewWrGrFngm2Sw==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/chip@0.13.0':
-    resolution: {integrity: sha512-+2h7gAJgjAp4CgBVumHQO2Q/mCHS/NSZsqrMTMGD5/IcTIFFT9XeTbRZN2NCyXHo/TTdrYCj/r7cvtkfBOus4Q==}
+  '@entur/chip@0.13.1':
+    resolution: {integrity: sha512-05jZwN9hn1Zq1Nxbq19QGaz/EAFITyfR0XWh6Bqmo/KPl4q7eVflfGypmmEShYhAKac4zNfCfvkM4RqH4n7SeA==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/dropdown@9.3.0':
-    resolution: {integrity: sha512-g2l1z5PYqRnAmw45ghRuBowP28QnwWSgs//eFsg2ualOcPzvhKej3lFV0/f3CYSCd8RVJXT1CrGwBmxA2f5oFw==}
+  '@entur/dropdown@9.3.1':
+    resolution: {integrity: sha512-lfRcNKIQ32J+DFPpBW2xrvKIFUOo302adQWedXOsYTbfMjupGo54nSNkq+keUqnMTWId1vVpMkoYnma9FGsFdQ==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/expand@4.1.0':
-    resolution: {integrity: sha512-pU5crBfc+bajrVZ90GRyd5xEeXH5MiIokUlEQUNV2gIuwTf10YAfSx0KB0FqhXLvkhgpJqAm1ifJSKZ7DFsrmQ==}
+  '@entur/expand@4.1.1':
+    resolution: {integrity: sha512-h5V2SpXXh3W7Pm4+Ya6dg9ZDinluhojU+ZRViqJ0TO5ymAZ+/6VIS1Gru/5BpocCsbYbeuN3UHfKcFzGIZcaAQ==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/form@10.3.0':
-    resolution: {integrity: sha512-iNb8PiuTtTBb1v/fAWSuN6qfWCJILNEjLTzfjUAITFeIFvq4FANzN/lCUDjo1OaB9RDBISthmRJNFqsOzGl4Sw==}
+  '@entur/form@10.3.1':
+    resolution: {integrity: sha512-i4QJNkM2rY3iQMWRQkAM+RqTC+sgOOAgxsxcCPFc1JxjYyiibz40/QQzQS6WIvi/3HgQ6EA6/IFr3LmVKRuyjg==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/icons@10.1.0':
-    resolution: {integrity: sha512-ix1qp+Rz3JlDMorMbugj/9b7XUV+iH36/8fBEHTQ09pqOuFiF1tdY5Ww0ZjhCPXr+ckCgviCuVFARWkpiKIv+Q==}
+  '@entur/icons@10.1.1':
+    resolution: {integrity: sha512-B7zsAYvQMAqb5xIMEVFphF4s7URGP4BzHhsRpPbg2DnXoIGh9pNDtbTtsxDuwmdCNbqqmAhfFHKFo/TGBJpz6A==}
     peerDependencies:
       react: '>=18.0.0'
 
-  '@entur/layout@5.1.0':
-    resolution: {integrity: sha512-uRehGnNMpQgHZ0aw/6mjzcOFXnRZq0z3RzNGsHXX1W5GHsK397aSuwqNdhiskqQ4R5RonUD5ZMqXxdVby4OmVA==}
-    peerDependencies:
-      react: '>=18.0.0'
-      react-dom: '>=18.0.0'
-
-  '@entur/loader@0.9.0':
-    resolution: {integrity: sha512-ks9E8tKAUCJFgSzgYQj9JkqSyGmbacFf8mxsfmZNDoYcwiSac8LsBC9pk15SApHI3DN/Rfof9JJLvcedIl3IBA==}
+  '@entur/layout@5.1.1':
+    resolution: {integrity: sha512-ElafSHRvklhWwP8QIPEUKWzdgCRRpAbj9tl/7oJYwCOf1fnzdtVx0YfoxaUBDGJfTKuebI1ew3SRYjFXT9ER6Q==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/menu@7.4.0':
-    resolution: {integrity: sha512-GeZK3UgT0FiVCRUWpOMTA9JxHajaQohOHsSpKscQdNUKU/nVDuegl3ii44mSnDEQ1/N3Mi4x+xLg6Zh0NJUN0A==}
+  '@entur/loader@0.9.1':
+    resolution: {integrity: sha512-I5nNrjcJ0rmNPXlyxxarzJxYPdrITrnJVDinCVItvXAKJXjMS/CCwgIPho72uFxKM6HFQuvqwQn0wlCZ76yBng==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/modal@2.1.0':
-    resolution: {integrity: sha512-EOtWHYiIRH5XtT/M5+zdO/H6zv7caT70axoWAVkpDl3C/lCkH1LbNppAze6uFJx/gBQ3B91/fOR2DsPqV9XqkQ==}
+  '@entur/menu@7.4.1':
+    resolution: {integrity: sha512-6OZwBsFVxkdjWCYzPDT9AKaykE41zkvDmXdMzs9NExs5OLH2oKraI4rWiG8rqK+d3y/EsnIDJtfddyibsFHwhA==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/tab@0.10.0':
-    resolution: {integrity: sha512-Dm5OU+nPQRnvHrD8s1DwpyWVQCZK+k8P3F3+fOZhq/ZVKsO6vN6QGwkWiLjZO4iqx8lKDvSqDrI+/bnhOd+u3g==}
+  '@entur/modal@2.1.1':
+    resolution: {integrity: sha512-5zkx3mRydcnQ/8rd6F2UXy3gqUaLTl9rvFrAlU5BSKczKXSTDYTOZRc1R5L2YxgyHfYgPvI3MPEN0C3OiLBhvg==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/table@5.2.0':
-    resolution: {integrity: sha512-Qx1kIDwLvrn9yVsXJjakbyAkKFwroH67tYMKbT47S03PhTftLTHT1OrQiiyQIQ3CGrzkDkSCKKHPdAijf4TDGQ==}
+  '@entur/tab@0.10.1':
+    resolution: {integrity: sha512-MJu5R7jxYw79JbD3PLXlAiAYi6aaXNfa98S/BuZD8gwqsWj/TrDvtmUT4zrzzKWQ++yPGhCLECjILDysKUoipw==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/tokens@4.3.0':
-    resolution: {integrity: sha512-/lqZcBw3kv2sHgID0O2RGEQXV0DgwkfFFEZaMbwMjA/vWmw5yqX2VQHQ2U+Sa5klma30lHqXkOhJddEykug46Q==}
-
-  '@entur/tooltip@6.1.0':
-    resolution: {integrity: sha512-A1phWpozehaCQ/Lmq2BA2jvPAOr7e08m9RZc4M/Mcd6WwqHAf/bRtykG+c3KkrFxoSE+NKv9ix1QWI+XSdJEWQ==}
+  '@entur/table@5.2.1':
+    resolution: {integrity: sha512-kUzoGxMiTzhO4VJJPjmlpsYrfpy8tbknCPrHvOYJa8I0CxKPawVe8WtgzdT3UdA8T2YTcb3eXJdas/SvDJCtag==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/typography@3.1.0':
-    resolution: {integrity: sha512-5alB5bHEgmLX2oPKUR7ir8bqdmS53ZWWhHAVAxWQIGmdZa4UsWn9rmyt0Vmgal3XxCC69bnSOGOTvX05opdkQQ==}
+  '@entur/tokens@4.3.1':
+    resolution: {integrity: sha512-oECGP/tgJe908udNcI8My3ZOnROZ57aZ6ewcgdgD9g8Uc2m9dnPiEi9SypKoBJ7l/PgMR5hc0HN2a5C4MazICA==}
+
+  '@entur/tooltip@6.1.1':
+    resolution: {integrity: sha512-ZZPT4uIc2Zof0ioofsq9vr/ySWSqI0cBlOOMJt1b7LEzyBdjqrMxZSCLGbyTGgE9lMmIsYjqsX4sDP2UDrphSg==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
 
-  '@entur/utils@0.15.3':
-    resolution: {integrity: sha512-GADz3Ce4EEejhDA4p3ACYzNT0x0u1gLoeLCOtxpcLou04rxyQD0r+zFx3/JWcTLWnsoEC6Pk7tes8uz2O3Hs/Q==}
+  '@entur/typography@3.2.0':
+    resolution: {integrity: sha512-5s6HnER50QD7y3nmfNX4BbmrvQNj8NrSLEW56fdMvepEXcEnWSnKcmjGCZa6k+Fqs+8t068lMhhTb3qyNaILdQ==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@entur/utils@0.15.4':
+    resolution: {integrity: sha512-H3v/ptR2MllVNXN/S5ctAmUY4+CzfWVpTrckaWyAFQUamEcV0Y5re6exSL/nzxcLrdPruEO2N6Xe4dY0Ed9rsg==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
@@ -982,192 +982,192 @@ snapshots:
 
   '@babel/runtime@7.29.7': {}
 
-  '@entur/a11y@0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/a11y@0.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/tokens': 4.3.0
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/alert@0.22.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/alert@0.22.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/button': 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/expand': 4.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/tooltip': 6.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/typography': 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/button': 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/expand': 4.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/tooltip': 6.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/typography': 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       copy-text-to-clipboard: 2.2.0
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/button@5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/button@5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/loader': 0.9.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/loader': 0.9.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/chip@0.13.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/chip@0.13.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/form': 10.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/loader': 0.9.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/form': 10.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/loader': 0.9.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/dropdown@9.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/dropdown@9.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/a11y': 0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/button': 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/chip': 0.13.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/form': 10.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/loader': 0.9.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/tooltip': 6.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/a11y': 0.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/button': 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/chip': 0.13.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/form': 10.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/loader': 0.9.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/tooltip': 6.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@floating-ui/react-dom': 2.1.9(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       downshift: 9.4.0(react@19.3.1)
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/expand@4.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/expand@4.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/typography': 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/typography': 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/form@10.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/form@10.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/a11y': 0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/button': 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/tooltip': 6.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/typography': 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/a11y': 0.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/button': 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/tooltip': 6.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/typography': 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/icons@10.1.0(react@19.3.1)':
+  '@entur/icons@10.1.1(react@19.3.1)':
     dependencies:
-      '@entur/tokens': 4.3.0
+      '@entur/tokens': 4.3.1
       react: 19.3.1
 
-  '@entur/layout@5.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/layout@5.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/typography': 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/typography': 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
       tiny-warning: 1.0.3
 
-  '@entur/loader@0.9.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/loader@0.9.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/tokens': 4.3.0
-      '@entur/typography': 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/typography': 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/menu@7.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/menu@7.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/a11y': 0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/button': 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/expand': 4.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/tooltip': 6.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/typography': 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/a11y': 0.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/button': 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/expand': 4.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/tooltip': 6.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/typography': 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@floating-ui/react': 0.26.28(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/modal@2.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/modal@2.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/a11y': 0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/button': 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/layout': 5.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/typography': 3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/a11y': 0.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/button': 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/layout': 5.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/typography': 3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/tab@0.10.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/tab@0.10.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/tokens': 4.3.0
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/table@5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/table@5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/a11y': 0.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/button': 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/expand': 4.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/form': 10.3.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/layout': 5.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/tooltip': 6.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/a11y': 0.4.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/button': 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/expand': 4.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/form': 10.3.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/layout': 5.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/tooltip': 6.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       lodash.get: 4.4.2
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/tokens@4.3.0':
+  '@entur/tokens@4.3.1':
     dependencies:
       hex-rgb: 4.3.0
 
-  '@entur/tooltip@6.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/tooltip@6.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/button': 5.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/layout': 5.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/button': 5.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/layout': 5.1.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@floating-ui/react': 0.26.28(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@floating-ui/react-dom': 2.1.9(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/typography@3.1.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/typography@3.2.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@entur/icons': 10.1.0(react@19.3.1)
-      '@entur/tokens': 4.3.0
-      '@entur/utils': 0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@entur/icons': 10.1.1(react@19.3.1)
+      '@entur/tokens': 4.3.1
+      '@entur/utils': 0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       classnames: 2.5.1
       modern-normalize: 3.0.1
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@entur/utils@0.15.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@entur/utils@0.15.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
